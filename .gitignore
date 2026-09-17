@@ -9,3 +9,8 @@ xcuserdata/
 .swiftpm/
 .agents/
 .forgeguard/
+target/
+*.key
+*.token
+*.log
+*.exe

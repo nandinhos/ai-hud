@@ -539,7 +539,32 @@ fn read_all(p: Presence, ctx: &mut Ctx) -> Vec<Activity> {
     if p.gemini {
         all.extend(antigravity_activity());
     }
+    all.extend(muse_activity());
     all
+}
+
+fn muse_activity() -> Option<Activity> {
+    let home = dirs::home_dir()?;
+    let paths = [
+        home.join(".local").join("share").join("muse").join("tui-history.jsonl"),
+        home.join(".config").join("muse").join("trust.json"),
+        home.join(".config").join("muse").join("auth.json"),
+    ];
+    let now = now_ms();
+    for p in paths {
+        if let Some(m) = mtime_ms(&p) {
+            if now.saturating_sub(m) < 45_000 {
+                return Some(Activity {
+                    provider: "meta".into(),
+                    state: "busy".into(),
+                    name: "Meta Muse".into(),
+                    detail: "Turno ativo...".into(),
+                    since: m,
+                });
+            }
+        }
+    }
+    None
 }
 
 /// For doctor: the raw material behind the Codex working-state decision

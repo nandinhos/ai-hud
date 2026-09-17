@@ -14,6 +14,9 @@ mod codex;
 mod cursor;
 mod antigravity;
 mod agy_cli;
+mod deepseek;
+mod muse;
+mod opencode;
 mod glyphs;
 mod trayicon;
 mod activity;
@@ -28,8 +31,8 @@ use tauri::{AppHandle, Emitter, Manager};
 /// and its tail on the left. `fitZoom` in ui/notch.html divides by the same width.
 pub const NOTCH_W: f64 = 360.0;
 /// Hand-bumped build tag, written to run.log at startup so a log can always be matched to the exe that wrote it.
-pub const BUILD: &str = "r31";
-pub const NOTCH_H: f64 = 520.0; // 300 clipped the card once it held three window blocks plus the session list; 460 clipped Antigravity's two model groups once the reading was stale and an agent was working
+pub const BUILD: &str = "r32";
+pub const NOTCH_H: f64 = 750.0; // expanded to comfortably hold all 7 providers without clipping
 
 pub struct AppState {
     pub store: Mutex<state::Store>,
@@ -39,6 +42,9 @@ pub struct AppState {
     pub codex: Mutex<usage::UsageSnapshot>,
     pub cursor: Mutex<usage::UsageSnapshot>,
     pub antigravity: Mutex<usage::UsageSnapshot>,
+    pub deepseek: Mutex<usage::UsageSnapshot>,
+    pub muse: Mutex<usage::UsageSnapshot>,
+    pub opencode: Mutex<usage::UsageSnapshot>,
     /// Provider glyph cache, collected at launch and again on a tray refresh
     pub glyphs: Mutex<std::collections::HashMap<String, glyphs::Glyph>>,
     /// Working state of the non-Claude providers (Cursor reports it; Codex and Antigravity are inferred from recent writes)
@@ -247,11 +253,29 @@ fn refresh_usage(app: AppHandle) {
     codex::request_refresh();
     cursor::request_refresh();
     antigravity::request_refresh();
+    deepseek::request_refresh();
+    muse::request_refresh();
+    opencode::request_refresh();
 }
 
 #[tauri::command]
 fn get_antigravity(state: tauri::State<AppState>) -> usage::UsageSnapshot {
     state.antigravity.lock().unwrap().clone()
+}
+
+#[tauri::command]
+fn get_deepseek(state: tauri::State<AppState>) -> usage::UsageSnapshot {
+    state.deepseek.lock().unwrap().clone()
+}
+
+#[tauri::command]
+fn get_muse(state: tauri::State<AppState>) -> usage::UsageSnapshot {
+    state.muse.lock().unwrap().clone()
+}
+
+#[tauri::command]
+fn get_opencode(state: tauri::State<AppState>) -> usage::UsageSnapshot {
+    state.opencode.lock().unwrap().clone()
 }
 
 #[tauri::command]
@@ -303,6 +327,9 @@ fn open_provider_page(provider: String) {
         "codex" => "https://chatgpt.com/#settings/Account",
         "cursor" => "https://cursor.com/dashboard",
         "gemini" => "https://antigravity.google",
+        "deepseek" => "https://platform.deepseek.com/usage",
+        "meta" => "https://about.meta.com",
+        "opencode" => "https://opencode.ai/auth",
         _ => "https://claude.ai/settings/usage",
     };
     let mut cmd = std::process::Command::new("cmd");
@@ -695,6 +722,9 @@ fn snapshot_of(app: &AppHandle, id: &str) -> usage::UsageSnapshot {
         "codex" => st.codex.lock().unwrap().clone(),
         "cursor" => st.cursor.lock().unwrap().clone(),
         "gemini" => st.antigravity.lock().unwrap().clone(),
+        "deepseek" => st.deepseek.lock().unwrap().clone(),
+        "meta" => st.muse.lock().unwrap().clone(),
+        "opencode" => st.opencode.lock().unwrap().clone(),
         _ => st.usage.lock().unwrap().clone(),
     }
 }
@@ -1146,6 +1176,9 @@ fn main() {
             codex: Mutex::new(codex::load_persisted()),
             cursor: Mutex::new(cursor::load_persisted()),
             antigravity: Mutex::new(antigravity::load_persisted()),
+            deepseek: Mutex::new(deepseek::load_persisted()),
+            muse: Mutex::new(muse::load_persisted()),
+            opencode: Mutex::new(opencode::load_persisted()),
             glyphs: Mutex::new(Default::default()),
             activity: Mutex::new(Vec::new()),
         })
@@ -1155,6 +1188,9 @@ fn main() {
             get_codex,
             get_cursor,
             get_antigravity,
+            get_deepseek,
+            get_muse,
+            get_opencode,
             get_glyphs,
             get_activity,
             open_data_dir,
@@ -1211,6 +1247,9 @@ fn main() {
             codex::start(handle.clone());
             cursor::start(handle.clone());
             antigravity::start(handle.clone());
+            deepseek::start(handle.clone());
+            muse::start(handle.clone());
+            opencode::start(handle.clone());
             activity::start(handle.clone());
             // Collecting glyphs may read icon resources out of a few executables; do it off the main thread and push when done
             let gh = handle.clone();
