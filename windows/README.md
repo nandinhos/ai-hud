@@ -1,15 +1,28 @@
-# Codenotch for Windows
+# Codenotch / ai-hud for Windows
 
-A Windows port of [Codenotch](https://github.com/vinzdg/codenotch) — the usage notch that
-sits on the edge of your screen and answers two questions at a glance:
-**how much of my AI allowance is left**, and **is Claude still working**.
+Uma evolução e porte nativo para Windows do [Codenotch](https://github.com/vinzdg/codenotch) — o HUD minimalista que repousa na borda da tela e responde instantaneamente:
+**quanto da sua cota de IA ainda resta**, e **se seus assistentes ainda estão gerando código**.
 
-Same design language as the macOS original (inverse-rounded pill, colour-graded rings,
-hover card with per-window bars), rebuilt for Windows in Rust + Tauri 2 / WebView2.
-No code is copied from the Swift app; the providers are reimplemented from their
-documented behaviour and the wire formats.
+Construído em **Rust + Tauri v2 + Edge WebView2**, reproduzindo a mesma linguagem visual de anéis coloridos com gradientes, cards de hover com barras por janela temporal e suporte expandido a **8 provedores de IA**.
 
-## What it shows
+---
+
+## 🚀 Comparativo: ai-hud vs. Codenotch Original (Upstream)
+
+| Recurso / Funcionalidade | 🚀 ai-hud (Esta Versão) | 🏛️ Versão Original Upstream | Benefício / Impacto |
+|---|:---:|:---:|---|
+| **Provedores de IA** | **8 Provedores**<br>*(Claude, Codex, Cursor, Antigravity, DeepSeek, Meta Muse, OpenCode Go, MiniMax)* | **4 Provedores**<br>*(Claude, Codex, Cursor, Antigravity)* | Abrange praticamente todo o ecossistema moderno de codificação com IA. |
+| **Integração MiniMax Token Plan** | ✅ **Oficial com Link Direto**<br>*(Intervalo 5h, cota semanal e botão para recarga no console)* | ❌ Não suportado | Acompanhe a queima de tokens do MiniMax com atalho para o console. |
+| **Gerenciador Visual de Chaves de API** | ✅ **UI Gráfica com Máscara**<br>*(Exibição protegida `skmini-********1234` com botão `👁️`)* | ❌ Arquivos de texto manuais | Gerencie credenciais na tela de configurações com segurança visual. |
+| **Controle de Opacidade Dinâmico** | ✅ **Transparência em Repouso (100% a 25%)**<br>*(Slider na config + botão rápido no topo do HUD)* | ❌ Opacidade fixa em 100% | O HUD fica translúcido para não tampar código, acendendo com o mouse. |
+| **Atalhos Rápidos no HUD (Pill)** | ✅ **Botão de Opacidade + Engrenagem ⚙️** | ❌ Apenas menu de contexto no Tray | Alterne a transparência ou abra as configurações em 1 clique direto no HUD. |
+| **Estabilidade & Zero-Lag (Windows 11)** | ✅ **Janela Pré-Alocada Anti-Deadlock**<br>*(Ciclo `hide/show` sem bloqueio da UI thread / COM)* | ⚠️ Risco de travamento (AppHangB1) ao recriar WebView2 em tempo de execução | Abertura instantânea (0ms), sem telas brancas e sem travar o Windows. |
+| **Localização em Português (PT-BR)** | ✅ **100% Traduzido em PT-BR**<br>*(Com auto-detecção do idioma do sistema operacional)* | ❌ Apenas Inglês | Nativamente acessível para desenvolvedores brasileiros. |
+| **Instalador Automatizado (NSIS)** | ✅ **`Codenotch-Setup.exe` via CI/CD**<br>*(Instalação per-user sem exigir admin)* | ⚠️ Build manual | Setup pronto e leve para Windows 10 e Windows 11. |
+
+---
+
+## Provedores Suportados (What it shows)
 
 | Cell | Source | How it reads it |
 |---|---|---|

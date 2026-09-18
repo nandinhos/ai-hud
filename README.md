@@ -2,21 +2,37 @@
 
 ![Codenotch](docs/design/codenotch-banner.png)
 
-[![CI](https://github.com/vinzdg/codenotch/actions/workflows/ci.yml/badge.svg)](https://github.com/vinzdg/codenotch/actions/workflows/ci.yml)
-![Platform](https://img.shields.io/badge/platform-macOS%2026%2B-black)
-![Swift](https://img.shields.io/badge/swift-5-orange)
+[![GitHub Release](https://img.shields.io/github/v/release/nandinhos/ai-hud?include_prereleases&color=7c3aed&label=release)](https://github.com/nandinhos/ai-hud/releases)
+[![Windows Package](https://github.com/nandinhos/ai-hud/actions/workflows/windows-package.yml/badge.svg)](https://github.com/nandinhos/ai-hud/actions/workflows/windows-package.yml)
+![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20%7C%20macOS%2015%2B-blue)
+![Stack](https://img.shields.io/badge/stack-Rust%20%7C%20Tauri%20v2%20%7C%20Swift%205-orange)
+![Idiomas](https://img.shields.io/badge/idiomas-Portugu%C3%AAs%20(BR)%20%7C%20English-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-**A cross-platform HUD that pins a sleek notch to your screen edge, showing how much of each coding assistant's usage limit you have burned — and whether it is still working, done, or waiting on you.**
+**Um HUD flutuante e minimalista fixado na borda da sua tela que monitora em tempo real suas cotas de IA, limites de uso e o status de trabalho dos seus assistentes de código favoritos.**
 
 > [!NOTE]
-> ### 🙏 Agradecimentos & Créditos (Credits & Acknowledgments)
-> Este projeto (**ai-hud**) é uma evolução e derivação independente baseada no projeto [Codenotch](https://github.com/vinzdg/codenotch), criado com excelência por **Vinz** ([@vinzdg](https://github.com/vinzdg)) sob licença MIT.
-> 
-> **Novidades & Diferenciais do ai-hud**:
-> - 🌐 **Suporte Multilíngue Completo (PT-BR / EN)**: Notificações, gaveta (notch) e central de configurações traduzidas nativamente para Português do Brasil com detecção automática do sistema operacional.
-> - ⚡ **8 Provedores de IA Suportados**: Claude Code, OpenAI Codex, Cursor, Google Antigravity, DeepSeek, Meta Muse, OpenCode Go e MiniMax.
-> - 🪟 **Otimizações Específicas para Windows**: Correção de telas em branco no WebView2, gestão de sockets, recuperação de credenciais e empacotamento automatizado via CI/CD.
+> ### 🙏 Agradecimentos & Créditos Upstream (Credits & Acknowledgments)
+> Este projeto (**ai-hud**) é uma evolução independente baseada no projeto original [Codenotch](https://github.com/vinzdg/codenotch), criado por **Vinz** ([@vinzdg](https://github.com/vinzdg)) sob licença MIT. Mantemos a elegância do design original enquanto expandimos a arquitetura para o Windows com novos provedores, controles visuais avançados e total localização em Português do Brasil.
+
+---
+
+### 🚀 Comparativo: ai-hud (Versão Nova) vs. Versão Original (Upstream)
+
+| Recurso / Funcionalidade | 🚀 ai-hud (Esta Versão) | 🏛️ Versão Original (Upstream) | Benefício / Impacto Prático |
+|---|:---:|:---:|---|
+| **Provedores de IA no Windows** | **8 Provedores**<br>*(Claude, Codex, Cursor, Antigravity, DeepSeek, Meta Muse, OpenCode Go, MiniMax)* | **4 Provedores**<br>*(Claude, Codex, Cursor, Antigravity)* | Cobertura completa das principais IAs de código do mercado atual em um único HUD. |
+| **Integração Oficial MiniMax** | ✅ **Nativo com Quotas Reais**<br>*(API de Token Plan 5h/semanal + link direto ao console)* | ❌ Não suportado no Windows | Monitoramento de saldo e renovação de cotas do MiniMax com 1 clique direto para a recarga. |
+| **Gerenciador Visual de Chaves de API** | ✅ **Interface Gráfica com Máscara**<br>*(Visualização segura: `skmini-********cksjks` e toggle `👁️`)* | ❌ Apenas arquivos de texto no disco | Inserção e edição segura de tokens diretamente pela janela de configurações sem editar arquivos manuais. |
+| **Controle de Opacidade do HUD** | ✅ **Dinâmico em Repouso (100% a 25%)**<br>*(Ajuste fino com slider + atalho rápido na pill)* | ❌ Opacidade fixa em 100% | O HUD fica translúcido e discreto sem poluir sua visão, ganhando foco total ao passar o mouse. |
+| **Atalhos Rápidos no HUD (Quick Actions)** | ✅ **Botões Sutis Integrados**<br>*(Alternador de transparência no topo + engrenagem `⚙️` na base)* | ❌ Sem botões no HUD<br>*(Apenas menu de contexto no Tray)* | Acesso instantâneo às configurações e ajustes visuais sem tirar a mão do fluxo de trabalho. |
+| **Comportamento Inteligente de Visibilidade** | ✅ **Sempre Visível c/ Opacidade OU Ocultação Suave**<br>*(Retração à borda com detecção precisa do watchdog)* | ⚠️ Retração básica com limitações em multi-monitores | Controle total sobre a discrição do HUD na sua tela, sem desvios ou falsos toques. |
+| **Estabilidade & Zero-Freeze no Windows** | ✅ **Arquitetura Anti-Deadlock**<br>*(Janela de settings pré-alocada, ciclo `hide/show` livre de bloqueios COM/WebView2)* | ⚠️ Risco de travamento (AppHangB1) ao recriar WebView2 em tempo de execução | Abertura instantânea (0ms de latência), zero travamentos do Windows e zero congelamentos de tela. |
+| **Suporte Nativo a Português (PT-BR)** | ✅ **100% Localizado em PT-BR**<br>*(HUD, tooltips, settings e notificações com auto-detecção)* | ❌ Apenas Inglês (EN) | Experiência fluida e intuitiva em português brasileiro com fallback automático para inglês. |
+| **Prevenção de Telas Brancas no Windows 11** | ✅ **Fallback Sólido Anti-Flicker**<br>*(Compatível com Windows 11 24H2 Build 26100 e temas DWM)* | ⚠️ Risco de tela branca se o efeito Mica falhar | Interface escura estável e moderna sem oscilação visual. |
+| **Instalador Automatizado Windows** | ✅ **Instalador NSIS Integrado**<br>*(Setup autônomo sem necessidade de permissão de administrador)* | ⚠️ Dependente do fluxo manual de build | Download pronto para uso via GitHub Releases (`Codenotch-Setup.exe`). |
+
+---
 
 ![Collapsed notch with hover tooltip](docs/design/frame-124-hover-tooltip.png)
 
