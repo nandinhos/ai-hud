@@ -17,6 +17,10 @@ documented behaviour and the wire formats.
 | **Codex** | The local Codex sign-in in `~/.codex/auth.json` (read only, never refreshed), falling back to the newest session snapshot | Live primary/secondary windows (5h + weekly on paid plans, a monthly window on free) while Codex is signed in; Spark and Code review appear on the hover card when Codex reports them; otherwise the last snapshot, marked stale by its own timestamp. |
 | **Cursor** | The editor's own session from `state.vscdb` → `cursor.com/api/usage-summary` | Included usage / API usage / on-demand, reset at billing-cycle end. Nothing to sign into: it borrows the editor's session, so there is only ever one account. |
 | **Antigravity** | Official `agy` CLI `/usage` print when installed; otherwise the existing local `language_server` bridge, Google Cloud Code API, or transcript model count | Official four quota rows (Gemini & Claude/GPT 5h/weekly) without running the full IDE. When CLI is absent, falls back to legacy local bridge/API. |
+| **DeepSeek** | `DEEPSEEK_API_KEY` or `%APPDATA%\codenotch\deepseek.key` | Balance and usage inquiry via official DeepSeek API endpoints. |
+| **Meta Muse** | `~/.config/muse/auth.json` and `settings.json` | Real-time session and model telemetry without arbitrary mock values. |
+| **OpenCode Go**| `OPENCODE_API_KEY` or `%APPDATA%\codenotch\opencode.key` | Usage and allowance monitoring via OpenCode API endpoints. |
+| **MiniMax** | `MINIMAX_API_KEY`, `%APPDATA%\codenotch\minimax.key` or `~/.config/minimax/key.txt` | Interval (5h) and weekly quota tracking via official Token Plan API (`api.minimax.io/v1/token_plan/remains`). |
 
 Providers that are not installed simply do not get a cell.
 

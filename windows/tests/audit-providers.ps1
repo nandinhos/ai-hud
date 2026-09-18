@@ -1,8 +1,8 @@
-# Testes e Auditoria E2E dos 7 Provedores do Codenotch / ai-hud
+# Testes e Auditoria E2E dos 8 Provedores do Codenotch / ai-hud
 # Executar no PowerShell do Windows
 
 Write-Output "=========================================================="
-Write-Output "   CODENOTCH / AI-HUD: AUDITORIA E2E DOS 7 PROVEDORES    "
+Write-Output "   CODENOTCH / AI-HUD: AUDITORIA E2E DOS 8 PROVEDORES    "
 Write-Output "=========================================================="
 
 $results = @()
@@ -109,6 +109,18 @@ if ((Test-Path $opencodeKeyFile) -or $opencodeEnv) {
     $opencodeDetail = "Chave de API disponível para inferência e limites"
 }
 $results += [PSCustomObject]@{ Provider = "7. OpenCode Go"; Status = $opencodeStatus; Detalhes = $opencodeDetail }
+
+# 8. MiniMax
+$minimaxKeyFile = "$env:APPDATA\codenotch\minimax.key"
+$minimaxConfigKey = "$env:USERPROFILE\.config\minimax\key.txt"
+$minimaxEnv = [Environment]::GetEnvironmentVariable("MINIMAX_API_KEY", "User")
+$minimaxStatus = "Não Configurado"
+$minimaxDetail = "Configure %APPDATA%\codenotch\minimax.key, ~/.config/minimax/key.txt ou MINIMAX_API_KEY"
+if ((Test-Path $minimaxKeyFile) -or (Test-Path $minimaxConfigKey) -or $minimaxEnv) {
+    $minimaxStatus = "Configurado"
+    $minimaxDetail = "Chave de API presente para consulta de cotas e token plan"
+}
+$results += [PSCustomObject]@{ Provider = "8. MiniMax"; Status = $minimaxStatus; Detalhes = $minimaxDetail }
 
 # Exibir tabela formatada sem cortes
 ($results | Format-Table -AutoSize -Wrap | Out-String -Width 200).TrimEnd() | Write-Output

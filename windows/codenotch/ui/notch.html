@@ -160,6 +160,7 @@ let agSnap={status:'absent',windows:[],fetched_at:0,note:''};
 let deepseekSnap={status:'absent',windows:[],fetched_at:0,note:''};
 let museSnap={status:'absent',windows:[],fetched_at:0,note:''};
 let opencodeSnap={status:'absent',windows:[],fetched_at:0,note:''};
+let minimaxSnap={status:'absent',windows:[],fetched_at:0,note:''};
 let glyphs={}; // id → {kind:'mark'|'appicon', url}
 let activity=[]; // working state of the non-Claude providers: {provider,state:'busy'|'waiting',name,detail,since}
 let uiLang='en';
@@ -210,6 +211,7 @@ const TEXT={
     'Configure DEEPSEEK_API_KEY to see usage.':'Configure sua chave DEEPSEEK_API_KEY para ver o uso.',
     'Run Meta Muse CLI to see usage.':'Execute o Meta Muse CLI para ver o uso.',
     'Configure OPENCODE_API_KEY or %APPDATA%\\codenotch\\opencode.key to see usage.':'Configure OPENCODE_API_KEY ou %APPDATA%\\codenotch\\opencode.key para ver o uso.',
+    'Configure MINIMAX_API_KEY or %APPDATA%\\codenotch\\minimax.key to see usage.':'Configure MINIMAX_API_KEY ou %APPDATA%\\codenotch\\minimax.key para ver o uso.',
     'needs your input':'aguarda sua resposta',
     'Working in':'Trabalhando em'
   },
@@ -483,6 +485,7 @@ function providers(){
   list.push({id:'deepseek',name:'DeepSeek',glyph:'Ds',snap:deepseekSnap});
   list.push({id:'meta',name:'Meta Muse',glyph:'Mu',snap:museSnap});
   list.push({id:'opencode',name:'OpenCode Go',glyph:'Oc',snap:opencodeSnap});
+  list.push({id:'minimax',name:'MiniMax',glyph:'Mx',snap:minimaxSnap});
   if(Array.isArray(notchSlots)&&notchSlots.length){
     const picked=list.filter(p=>!!slotFor(p.id));
     // Never leave the notch with nothing in it: an empty result means the choice no longer matches
@@ -513,6 +516,7 @@ function headlineOf(snap,id){
   if(id==='cursor') return byId('included')||byId('api');
   if(id==='meta') return byId('session')||ws[0];
   if(id==='opencode') return byId('opencode-session')||byId('opencode-monthly')||ws[0];
+  if(id==='minimax') return byId('interval')||ws[0];
   const fam=ws.filter(w=>laneFamily(w)===agPrefs.model), lanes=fam.length?fam:ws;
   if(agPrefs.limit!=='automatic'){ const w=tightestOf(lanes.filter(w=>laneIs(w,agPrefs.limit))); if(w) return w; }
   return tightestOf(lanes.filter(w=>w.used<1))||tightestOf(lanes)||lanes[0];
@@ -527,6 +531,7 @@ function weeklyOf(snap,id){
   if(id==='cursor') return null;
   if(id==='meta') return byId('weekly');
   if(id==='opencode') return byId('opencode-weekly');
+  if(id==='minimax') return byId('weekly');
   const fam=ws.filter(w=>laneFamily(w)===agPrefs.model), lanes=fam.length?fam:ws;
   return tightestOf(lanes.filter(w=>laneIs(w,'weekly')));
 }
@@ -642,7 +647,7 @@ function renderCard(){
   let html=`<div class="c-head">${headIcon}<span class="c-title">${ui().title(p.name)}</span></div>`;
   if(staleOf(snap)&&snap.fetched_at) html+=`<div class="c-sub">${textCopy('Updated')} ${ago(snap.fetched_at)}</div>`;
   if(snap.status==='needsAuth'){
-    const who={claude:'Sign in to Claude Code to see usage.',cursor:'Sign in to Cursor to see usage.',codex:'Sign in to Codex to see usage.',gemini:'Sign in to Antigravity to see usage.',deepseek:'Configure DEEPSEEK_API_KEY to see usage.',meta:'Run Meta Muse CLI to see usage.',opencode:'Configure OPENCODE_API_KEY or %APPDATA%\\codenotch\\opencode.key to see usage.'}[p.id]||'';
+    const who={claude:'Sign in to Claude Code to see usage.',cursor:'Sign in to Cursor to see usage.',codex:'Sign in to Codex to see usage.',gemini:'Sign in to Antigravity to see usage.',deepseek:'Configure DEEPSEEK_API_KEY to see usage.',meta:'Run Meta Muse CLI to see usage.',opencode:'Configure OPENCODE_API_KEY or %APPDATA%\\codenotch\\opencode.key to see usage.',minimax:'Configure MINIMAX_API_KEY or %APPDATA%\\codenotch\\minimax.key to see usage.'}[p.id]||'';
     html+=`<div class="c-note">${esc(textCopy(who))}<br>${esc(textCopy(snap.note||''))}</div>`;
   }else if(!snap.windows.length){
     html+=`<div class="c-note">${esc(textCopy(snap.note||'Waiting for first reading…'))}</div>`;
@@ -910,6 +915,8 @@ listen('muse',e=>{museSnap=e.payload||museSnap;renderRing();if(card.classList.co
 invoke('get_muse').then(u=>{museSnap=u||museSnap;renderRing();}).catch(()=>{});
 listen('opencode_usage',e=>{opencodeSnap=e.payload||opencodeSnap;renderRing();if(card.classList.contains('show'))renderCard();}).catch(()=>{});
 invoke('get_opencode').then(u=>{opencodeSnap=u||opencodeSnap;renderRing();}).catch(()=>{});
+listen('minimax',e=>{minimaxSnap=e.payload||minimaxSnap;renderRing();if(card.classList.contains('show'))renderCard();}).catch(()=>{});
+invoke('get_minimax').then(u=>{minimaxSnap=u||minimaxSnap;renderRing();}).catch(()=>{});
 invoke('get_notch_slots').then(v=>{if(Array.isArray(v)){notchSlots=v;renderRing();}}).catch(()=>{});
 listen('notch_slots',e=>{
   notchSlots=Array.isArray(e.payload)?e.payload:null;

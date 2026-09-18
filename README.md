@@ -15,7 +15,7 @@
 > 
 > **Novidades & Diferenciais do ai-hud**:
 > - 🌐 **Suporte Multilíngue Completo (PT-BR / EN)**: Notificações, gaveta (notch) e central de configurações traduzidas nativamente para Português do Brasil com detecção automática do sistema operacional.
-> - ⚡ **7 Provedores de IA Suportados**: Claude Code, OpenAI Codex, Cursor, Google Antigravity, DeepSeek, Meta Muse e OpenCode Go.
+> - ⚡ **8 Provedores de IA Suportados**: Claude Code, OpenAI Codex, Cursor, Google Antigravity, DeepSeek, Meta Muse, OpenCode Go e MiniMax.
 > - 🪟 **Otimizações Específicas para Windows**: Correção de telas em branco no WebView2, gestão de sockets, recuperação de credenciais e empacotamento automatizado via CI/CD.
 
 ![Collapsed notch with hover tooltip](docs/design/frame-124-hover-tooltip.png)

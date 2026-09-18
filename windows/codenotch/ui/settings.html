@@ -627,8 +627,8 @@ document.getElementById('close').addEventListener('click', () => {
 });
 
 /* ---- providers ---------------------------------------------------------- */
-const ORDER = ['claude', 'codex', 'cursor', 'gemini', 'deepseek', 'meta', 'opencode'];
-const FALLBACK_LABEL = { claude:'Claude', codex:'Codex', cursor:'Cursor', gemini:'Antigravity', deepseek:'DeepSeek', meta:'Meta Muse', opencode:'OpenCode Go' };
+const ORDER = ['claude', 'codex', 'cursor', 'gemini', 'deepseek', 'meta', 'opencode', 'minimax'];
+const FALLBACK_LABEL = { claude:'Claude', codex:'Codex', cursor:'Cursor', gemini:'Antigravity', deepseek:'DeepSeek', meta:'Meta Muse', opencode:'OpenCode Go', minimax:'MiniMax' };
 let options = [];      // [{id,label,status,used}] from get_tray_options
 let glyphs = {};       // id -> {kind:'svg'|'png'|'appicon', svg, url}
 function providerList(){

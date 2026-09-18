@@ -17,6 +17,7 @@ mod agy_cli;
 mod deepseek;
 mod muse;
 mod opencode;
+mod minimax;
 mod glyphs;
 mod trayicon;
 mod activity;
@@ -45,6 +46,7 @@ pub struct AppState {
     pub deepseek: Mutex<usage::UsageSnapshot>,
     pub muse: Mutex<usage::UsageSnapshot>,
     pub opencode: Mutex<usage::UsageSnapshot>,
+    pub minimax: Mutex<usage::UsageSnapshot>,
     /// Provider glyph cache, collected at launch and again on a tray refresh
     pub glyphs: Mutex<std::collections::HashMap<String, glyphs::Glyph>>,
     /// Working state of the non-Claude providers (Cursor reports it; Codex and Antigravity are inferred from recent writes)
@@ -259,6 +261,7 @@ fn refresh_usage(app: AppHandle) {
     deepseek::request_refresh();
     muse::request_refresh();
     opencode::request_refresh();
+    minimax::request_refresh();
 }
 
 #[tauri::command]
@@ -279,6 +282,11 @@ fn get_muse(state: tauri::State<AppState>) -> usage::UsageSnapshot {
 #[tauri::command]
 fn get_opencode(state: tauri::State<AppState>) -> usage::UsageSnapshot {
     state.opencode.lock().unwrap().clone()
+}
+
+#[tauri::command]
+fn get_minimax(state: tauri::State<AppState>) -> usage::UsageSnapshot {
+    state.minimax.lock().unwrap().clone()
 }
 
 #[tauri::command]
@@ -333,6 +341,7 @@ fn open_provider_page(provider: String) {
         "deepseek" => "https://platform.deepseek.com/usage",
         "meta" => "https://www.meta.ai",
         "opencode" => "https://opencode.ai/auth",
+        "minimax" => "https://platform.minimax.io/console/personal-info",
         _ => "https://claude.ai/settings/usage",
     };
     let mut cmd = std::process::Command::new("cmd");
@@ -728,6 +737,7 @@ fn snapshot_of(app: &AppHandle, id: &str) -> usage::UsageSnapshot {
         "deepseek" => st.deepseek.lock().unwrap().clone(),
         "meta" => st.muse.lock().unwrap().clone(),
         "opencode" => st.opencode.lock().unwrap().clone(),
+        "minimax" => st.minimax.lock().unwrap().clone(),
         _ => st.usage.lock().unwrap().clone(),
     }
 }
@@ -996,12 +1006,13 @@ pub fn provider_label(id: &str) -> &'static str {
         "deepseek" => "DeepSeek",
         "meta" => "Meta Muse",
         "opencode" => "OpenCode Go",
+        "minimax" => "MiniMax",
         _ => "Claude",
     }
 }
 
 /// Every provider the tray menu can offer, in the order the notch shows them.
-pub const TRAY_PROVIDER_IDS: [&str; 7] = ["claude", "codex", "cursor", "gemini", "deepseek", "meta", "opencode"];
+pub const TRAY_PROVIDER_IDS: [&str; 8] = ["claude", "codex", "cursor", "gemini", "deepseek", "meta", "opencode", "minimax"];
 
 /// Draws the icon and writes the tooltip. Shared by the polling thread and by the settings window,
 /// so a change made in settings shows up at once rather than on the next poll.
@@ -1185,6 +1196,7 @@ fn main() {
             deepseek: Mutex::new(deepseek::load_persisted()),
             muse: Mutex::new(muse::load_persisted()),
             opencode: Mutex::new(opencode::load_persisted()),
+            minimax: Mutex::new(minimax::load_persisted()),
             glyphs: Mutex::new(Default::default()),
             activity: Mutex::new(Vec::new()),
         })
@@ -1197,6 +1209,7 @@ fn main() {
             get_deepseek,
             get_muse,
             get_opencode,
+            get_minimax,
             get_glyphs,
             get_activity,
             open_data_dir,
@@ -1256,6 +1269,7 @@ fn main() {
             deepseek::start(handle.clone());
             muse::start(handle.clone());
             opencode::start(handle.clone());
+            minimax::start(handle.clone());
             activity::start(handle.clone());
             // Collecting glyphs may read icon resources out of a few executables; do it off the main thread and push when done
             let gh = handle.clone();
