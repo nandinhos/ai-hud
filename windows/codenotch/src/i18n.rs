@@ -97,6 +97,7 @@ pub fn tr(lang: &str, key: &str) -> &'static str {
         ("ko", "open_data") => "데이터 폴더 열기 (로그 / 아이콘)",
         ("ru", "open_data") => "Открыть папку данных (журналы / значки)",
         ("uk", "open_data") => "Відкрити теку даних (журнали / значки)",
+        ("pt", "open_data") => "Abrir pasta de dados (logs / ícones)",
         (_, "open_data") => "Open data folder (logs / icons)",
         ("ja", "refresh") => "使用量を今すぐ更新",
         ("ko", "refresh") => "사용량 지금 새로고침",
@@ -142,7 +143,6 @@ pub fn tr(lang: &str, key: &str) -> &'static str {
         ("pt", "reset_pos") => "Redefinir posição do HUD",
         ("pt", "hooks_missing") => "Hooks não instalados: clique com botão direito no ícone da bandeja → Instalar hooks do Claude Code",
         ("pt", "autostart") => "Iniciar com o Windows (em segundo plano)",
-        ("pt", "open_data") => "Abrir pasta de dados (logs / ícones)",
         ("pt", "tray_icon") => "Ícone da bandeja",
         ("pt", "tray_off") => "Ícone simples",
         ("pt", "tray_numbers") => "Números (até 2)",
@@ -266,6 +266,37 @@ mod tests {
                 "missing Ukrainian translation for {key}"
             );
             assert_ne!(tr("uk", key), "?", "unknown Ukrainian key {key}");
+        }
+    }
+
+    const PORTUGUESE_KEYS: &[(&str, &str)] = &[
+        ("open_data", "Abrir pasta de dados (logs / ícones)"),
+        ("install", "Instalar hooks do Claude Code"),
+        ("uninstall", "Desinstalar hooks"),
+        ("language", "Idioma"),
+        ("lang_auto", "Seguir sistema"),
+        ("reset_pos", "Redefinir posição do HUD"),
+        ("quit", "Sair"),
+        ("hooks_missing", "Hooks não instalados: clique com botão direito no ícone da bandeja → Instalar hooks do Claude Code"),
+        ("autostart", "Iniciar com o Windows (em segundo plano)"),
+        ("refresh", "Atualizar uso agora"),
+        ("settings", "Configurações…"),
+        ("tray_icon", "Ícone da bandeja"),
+        ("tray_off", "Ícone simples"),
+        ("tray_numbers", "Números (até 2)"),
+        ("tray_bars", "Barras (mais de 2)"),
+        ("tray_which", "Quais provedores"),
+    ];
+
+    #[test]
+    fn portuguese_translates_every_known_key() {
+        for (key, value) in PORTUGUESE_KEYS {
+            assert_eq!(
+                tr("pt", key),
+                *value,
+                "missing Portuguese translation for {key}"
+            );
+            assert_ne!(tr("pt", key), "?", "unknown Portuguese key {key}");
         }
     }
 

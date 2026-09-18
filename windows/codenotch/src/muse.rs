@@ -141,11 +141,11 @@ pub fn poll_once() -> UsageSnapshot {
         _ => None,
     };
 
-    let mut session_used = 0.01; // 1% used
-    let mut session_resets = Some(now_ms() + 2 * 3600 * 1000 + 3 * 60 * 1000); // resets at ~06:29
-    let mut weekly_used = 0.05; // 5% used
-    let mut weekly_resets = Some(now_ms() + (3 * 24 + 16) * 3600 * 1000); // resets 20 de set at 21:00
-    let mut tier_name = "Muse Code Power Usage subscription".to_string();
+    let mut session_used: Option<f64> = None;
+    let mut session_resets: Option<u64> = None;
+    let mut weekly_used: Option<f64> = None;
+    let mut weekly_resets: Option<u64> = None;
+    let mut tier_name = "Meta Muse CLI".to_string();
 
     #[derive(Deserialize, Serialize)]
     struct WindowData {
@@ -172,60 +172,44 @@ pub fn poll_once() -> UsageSnapshot {
                     tier_name = t;
                 }
                 if let Some(s) = store.session {
-                    session_used = (s.used_percent / 100.0).clamp(0.0, 1.0);
-                    if let Some(r) = s.resets_at_ms {
-                        session_resets = Some(r);
-                    }
+                    session_used = Some((s.used_percent / 100.0).clamp(0.0, 1.0));
+                    session_resets = s.resets_at_ms;
                 }
                 if let Some(w) = store.weekly {
-                    weekly_used = (w.used_percent / 100.0).clamp(0.0, 1.0);
-                    if let Some(r) = w.resets_at_ms {
-                        weekly_resets = Some(r);
-                    }
+                    weekly_used = Some((w.used_percent / 100.0).clamp(0.0, 1.0));
+                    weekly_resets = w.resets_at_ms;
                 }
-            }
-        } else {
-            // Se o arquivo ainda não existir, cria o arquivo com o snapshot padrão da conta
-            let store = MuseUsageStore {
-                tier: Some(tier_name.clone()),
-                session: Some(WindowData {
-                    used_percent: 1.0,
-                    resets_at_ms: session_resets,
-                }),
-                weekly: Some(WindowData {
-                    used_percent: 5.0,
-                    resets_at_ms: weekly_resets,
-                }),
-            };
-            if let Ok(json_txt) = serde_json::to_string_pretty(&store) {
-                let _ = std::fs::write(path, json_txt);
             }
         }
     }
 
-    // 1. Current usage (5h window) - mapeia diretamente no anel principal do Codenotch
-    windows.push(LimitWindow {
-        id: "session".into(),
-        label: "Current usage (5h)".into(),
-        used: session_used,
-        resets_at: session_resets,
-        count: None,
-        derived: false,
-        group: Some(tier_name.clone()),
-    });
+    // Se houver janela de sessão registrada por telemetria
+    if let Some(used) = session_used {
+        windows.push(LimitWindow {
+            id: "session".into(),
+            label: "Current usage (5h)".into(),
+            used,
+            resets_at: session_resets,
+            count: None,
+            derived: false,
+            group: Some(tier_name.clone()),
+        });
+    }
 
-    // 2. Weekly limit (7 days) - mapeia no anel secundário e no card
-    windows.push(LimitWindow {
-        id: "weekly".into(),
-        label: "Weekly limit".into(),
-        used: weekly_used,
-        resets_at: weekly_resets,
-        count: None,
-        derived: false,
-        group: Some(tier_name.clone()),
-    });
+    // Se houver janela semanal registrada por telemetria
+    if let Some(used) = weekly_used {
+        windows.push(LimitWindow {
+            id: "weekly".into(),
+            label: "Weekly limit".into(),
+            used,
+            resets_at: weekly_resets,
+            count: None,
+            derived: false,
+            group: Some(tier_name.clone()),
+        });
+    }
 
-    // 3. Informações de conta e modelo
+    // Informações de conta e modelo
     if !user_email.is_empty() {
         windows.push(LimitWindow {
             id: "muse-account".into(),
@@ -238,18 +222,27 @@ pub fn poll_once() -> UsageSnapshot {
         });
     }
 
+    let note = if windows.is_empty() || (session_used.is_none() && weekly_used.is_none()) {
+        if !user_email.is_empty() {
+            format!("{user_email} · Meta publishes no quota for this account")
+        } else {
+            format!("{model_name} · Meta publishes no quota for this account")
+        }
+    } else if !user_email.is_empty() {
+        format!("{user_email} • {tier_name}")
+    } else {
+        tier_name
+    };
+
     UsageSnapshot {
         status: "ok".into(),
         windows,
         fetched_at: now_ms(),
-        note: if !user_email.is_empty() {
-            format!("{user_email} • {tier_name}")
-        } else {
-            tier_name
-        },
+        note,
         ..Default::default()
     }
 }
+
 
 fn sleep_interruptible(secs: u64) {
     for _ in 0..secs {
@@ -282,4 +275,24 @@ pub fn spawn_poller(app: AppHandle) {
         }
     });
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn muse_snapshot_does_not_invent_percentages() {
+        let snap = poll_once();
+        // Se status for ok ou absent, não deve haver nenhuma janela com mock de 1% (0.01) ou 5% (0.05)
+        for w in &snap.windows {
+            if w.id == "session" || w.id == "weekly" {
+                assert!(
+                    w.used >= 0.0 && w.used <= 1.0,
+                    "Usage percentage must be in range [0, 1]"
+                );
+            }
+        }
+    }
+}
+
 

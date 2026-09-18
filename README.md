@@ -7,9 +7,16 @@
 ![Swift](https://img.shields.io/badge/swift-5-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-**A macOS app that pins a small black notch to a screen edge, showing how much
-of each coding assistant's usage limit you have burned — and whether it is
-still working, done, or waiting on you.**
+**A cross-platform HUD that pins a sleek notch to your screen edge, showing how much of each coding assistant's usage limit you have burned — and whether it is still working, done, or waiting on you.**
+
+> [!NOTE]
+> ### 🙏 Agradecimentos & Créditos (Credits & Acknowledgments)
+> Este projeto (**ai-hud**) é uma evolução e derivação independente baseada no projeto [Codenotch](https://github.com/vinzdg/codenotch), criado com excelência por **Vinz** ([@vinzdg](https://github.com/vinzdg)) sob licença MIT.
+> 
+> **Novidades & Diferenciais do ai-hud**:
+> - 🌐 **Suporte Multilíngue Completo (PT-BR / EN)**: Notificações, gaveta (notch) e central de configurações traduzidas nativamente para Português do Brasil com detecção automática do sistema operacional.
+> - ⚡ **7 Provedores de IA Suportados**: Claude Code, OpenAI Codex, Cursor, Google Antigravity, DeepSeek, Meta Muse e OpenCode Go.
+> - 🪟 **Otimizações Específicas para Windows**: Correção de telas em branco no WebView2, gestão de sockets, recuperação de credenciais e empacotamento automatizado via CI/CD.
 
 ![Collapsed notch with hover tooltip](docs/design/frame-124-hover-tooltip.png)
 
@@ -18,6 +25,7 @@ still working, done, or waiting on you.**
 Hover a ring for its limit windows and when they reset. Claude's ring shows the
 same **current session** window Claude Code's own `/usage` leads with, so the
 two never disagree.
+
 
 ## Download
 

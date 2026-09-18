@@ -167,20 +167,26 @@ fn is_desktop_owned(p: &std::path::Path) -> bool {
     s.contains("\\anthropicclaude\\") || s.contains("\\claude\\claude-code\\") || s.contains("\\windowsapps\\")
 }
 
-/// The standalone Claude Code command: its own installer's location first, then global npm/pnpm/Volta, then PATH
+/// The standalone Claude Code command: its own installer's location first, then global npm/pnpm/Volta/Scoop/Yarn, then PATH
 fn find_cli() -> Option<std::path::PathBuf> {
     let mut v = Vec::new();
     if let Some(h) = dirs::home_dir() {
         v.push(h.join(".local").join("bin").join("claude.exe"));
+        v.push(h.join(".local").join("bin").join("claude.cmd"));
+        v.push(h.join("AppData").join("Roaming").join("npm").join("claude.cmd"));
+        v.push(h.join("AppData").join("Roaming").join("npm").join("claude.exe"));
+        v.push(h.join("scoop").join("shims").join("claude.cmd"));
+        v.push(h.join(".yarn").join("bin").join("claude.cmd"));
+        v.push(h.join(".bun").join("bin").join("claude.exe"));
+        v.push(h.join(".volta").join("bin").join("claude.exe"));
     }
     if let Some(d) = dirs::config_dir() {
         v.push(d.join("npm").join("claude.cmd"));
+        v.push(d.join("npm").join("claude.exe"));
     }
     if let Some(d) = dirs::data_local_dir() {
         v.push(d.join("pnpm").join("claude.cmd"));
-    }
-    if let Some(h) = dirs::home_dir() {
-        v.push(h.join(".volta").join("bin").join("claude.exe"));
+        v.push(d.join("pnpm").join("claude.exe"));
     }
     if let Some(path) = std::env::var_os("PATH") {
         for dir in std::env::split_paths(&path) {
@@ -189,6 +195,21 @@ fn find_cli() -> Option<std::path::PathBuf> {
         }
     }
     v.into_iter().find(|p| p.is_file() && !is_desktop_owned(p))
+}
+
+/// Helper to locate npx in case a standalone claude wrapper isn't installed
+fn find_npx() -> Option<std::path::PathBuf> {
+    let mut v = Vec::new();
+    if let Some(h) = dirs::home_dir() {
+        v.push(h.join("AppData").join("Roaming").join("npm").join("npx.cmd"));
+    }
+    if let Some(path) = std::env::var_os("PATH") {
+        for dir in std::env::split_paths(&path) {
+            v.push(dir.join("npx.cmd"));
+            v.push(dir.join("npx.exe"));
+        }
+    }
+    v.into_iter().find(|p| p.is_file())
 }
 
 /// Whether a launch is worth making. Pure, so every branch is testable without a clock or a subprocess
@@ -211,12 +232,17 @@ fn should_renew(expires_at: Option<u64>, now: u64, attempted_for: Option<u64>, l
     true
 }
 
-/// `claude -p` with a null stdin starts up (which is where it renews an aged token), then exits non-zero for want
-/// of a prompt: no conversation, no transcript. Output goes nowhere — a token could in principle be echoed into it.
-fn run_renewal(cli: &std::path::Path) -> std::io::Result<()> {
+/// `claude -p` or `npx @anthropic-ai/claude-code -p` with a null stdin starts up (which is where it renews an aged token),
+/// then exits non-zero for want of a prompt: no conversation, no transcript.
+fn run_renewal(cli: &std::path::Path, is_npx: bool) -> std::io::Result<()> {
     use std::process::{Command, Stdio};
     let mut cmd = Command::new(cli);
-    cmd.arg("-p").stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+    if is_npx {
+        cmd.args(["-y", "@anthropic-ai/claude-code", "-p"]);
+    } else {
+        cmd.arg("-p");
+    }
+    cmd.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
     // Launched from inside a Claude Code session, the child would take the host's auth and leave the file alone
     for (k, _) in std::env::vars_os() {
         let k = k.to_string_lossy();
@@ -258,11 +284,17 @@ impl Renewer {
         }
         self.last_attempt = Some(now);
         self.attempted_for = cred.expires_at;
-        let Some(cli) = find_cli() else {
-            crate::applog("claude: token about to expire and no standalone claude CLI found to renew it");
-            return Some(false);
+        let (cli, is_npx) = match find_cli() {
+            Some(p) => (p, false),
+            None => match find_npx() {
+                Some(p) => (p, true),
+                None => {
+                    crate::applog("claude: token about to expire and no standalone claude CLI or npx found to renew it");
+                    return Some(false);
+                }
+            },
         };
-        if let Err(e) = run_renewal(&cli) {
+        if let Err(e) = run_renewal(&cli, is_npx) {
             crate::applog(&format!("claude: token renewal could not start ({}): {e}", cli.display()));
             return Some(false);
         }
@@ -554,7 +586,7 @@ mod tests {
         assert!(!is_desktop_owned(&cli));
         let before = read_credentials().and_then(|c| c.expires_at);
         let t = std::time::Instant::now();
-        run_renewal(&cli).expect("spawned");
+        run_renewal(&cli, false).expect("spawned");
         assert!(t.elapsed() < Duration::from_secs(RENEW_TIMEOUT_SECS), "returned before the timeout");
         let after = read_credentials().and_then(|c| c.expires_at);
         assert!(after >= before, "the expiry never moves backwards");
