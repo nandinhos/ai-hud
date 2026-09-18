@@ -107,8 +107,16 @@
   .btn:hover{background:var(--btn-hover)}
   select{font:inherit;font-size:13px;color:var(--text);background:var(--seg-bg);border:0;border-radius:6px;padding:4px 8px}
   select option{color:#000}
-  .link{border:0;background:none;padding:0;color:var(--accent);cursor:pointer;font-size:12px}
-  .link:hover{text-decoration:underline}
+  .btn-sm{font-size:11px;padding:3px 8px;border-radius:4px}
+  .key-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0 0 26px;font-size:12px}
+  .key-info{display:flex;align-items:center;gap:6px;min-width:0}
+  .key-lbl{color:var(--text2);flex:none}
+  .key-masked code{font-family:Consolas,monospace;background:var(--seg-bg);padding:2px 6px;border-radius:4px;color:var(--accent);font-size:11px}
+  .key-none{color:var(--text2);font-style:italic}
+  .key-btns{display:flex;gap:4px;flex:none}
+  .key-edit-row{display:none;align-items:center;gap:6px;margin:8px 0 0 26px}
+  .key-input{flex:1;min-width:0;font-size:12px;padding:4px 8px;border-radius:5px;border:1px solid var(--line);background:var(--seg-bg);color:var(--text)}
+  .key-input:focus{outline:1px solid var(--accent)}
 
   #toast{position:fixed;right:18px;bottom:14px;background:var(--side);border:1px solid var(--line);border-radius:8px;
     padding:5px 10px;font-size:12px;color:var(--text2);opacity:0;transition:opacity .3s;pointer-events:none}
@@ -488,7 +496,10 @@ const PT_STATIC = {
   'Logs, persisted readings, and custom icon overrides.':'Logs, leituras salvas e configurações do HUD.',
   'Saved':'Salvo com sucesso',
   'No icon in the system tray. Open Codenotch again from the Start menu to bring these settings back.':'Nenhum ícone na bandeja do sistema. Abra o Codenotch pelo menu Iniciar para abrir estas configurações novamente.',
-  'App designed and developed by':'Aplicativo desenvolvido por'
+  'App designed and developed by':'Aplicativo desenvolvido por',
+  'API Key':'Chave da API', 'Not configured':'Não configurada',
+  'Change':'Alterar', 'Configure':'Configurar', 'Remove':'Remover', 'Save':'Salvar', 'Cancel':'Cancelar',
+  'Paste your API key...':'Cole sua chave de API...', 'Key saved':'Chave salva com sucesso', 'Key removed':'Chave removida com sucesso'
 };
 const STATIC_TEXT = { pt: PT_STATIC, ru: RU_STATIC, zh: ZH_STATIC, ja: JA_STATIC, ko: KO_STATIC };
 const STATUS_TEXT = {
@@ -631,6 +642,10 @@ const ORDER = ['claude', 'codex', 'cursor', 'gemini', 'deepseek', 'meta', 'openc
 const FALLBACK_LABEL = { claude:'Claude', codex:'Codex', cursor:'Cursor', gemini:'Antigravity', deepseek:'DeepSeek', meta:'Meta Muse', opencode:'OpenCode Go', minimax:'MiniMax' };
 let options = [];      // [{id,label,status,used}] from get_tray_options
 let glyphs = {};       // id -> {kind:'svg'|'png'|'appicon', svg, url}
+let apiKeys = [];      // [{id, name, configured, masked, file_path}]
+function getKeyInfo(id){
+  return apiKeys.find(k => k && k.id === id) || { id, configured:false, masked:'' };
+}
 function providerList(){
   return options.length ? options : ORDER.map(id => ({ id, label:FALLBACK_LABEL[id], status:'' }));
 }
@@ -723,6 +738,24 @@ function accountBlock(p, isOn, locked){
       + (hooks.busy ? ' disabled' : '') + ' aria-label="' + esc(ui('Let Claude Code notify Codenotch', 'Let Claude Code notify Codenotch')) + '"></button></div>'
       + '<div class="acct-detail">' + esc(ui(HOOKS_WHY, HOOKS_WHY)) + '</div>';
   }
+  if(p.id === 'minimax' || p.id === 'deepseek' || p.id === 'opencode'){
+    const k = getKeyInfo(p.id);
+    const masked = k.masked;
+    const hasKey = k.configured && !!masked;
+    h += '<div class="key-row">'
+      + '<div class="key-info"><span class="key-lbl">' + esc(ui('API Key', 'API Key')) + ':</span> '
+      + (hasKey ? '<span class="key-masked"><code>' + esc(masked) + '</code></span>' : '<span class="key-none">' + esc(ui('Not configured', 'Not configured')) + '</span>')
+      + '</div>'
+      + '<div class="key-btns">'
+      + '<button class="btn btn-sm" data-key-action="edit" data-key-id="' + esc(p.id) + '">' + esc(hasKey ? ui('Change', 'Change') : ui('Configure', 'Configure')) + '</button>'
+      + (hasKey ? '<button class="btn btn-sm" data-key-action="clear" data-key-id="' + esc(p.id) + '">' + esc(ui('Remove', 'Remove')) + '</button>' : '')
+      + '</div></div>'
+      + '<div class="key-edit-row" id="key-edit-' + esc(p.id) + '">'
+      + '<input type="password" class="key-input" id="key-input-' + esc(p.id) + '" placeholder="' + esc(ui('Paste your API key...', 'Paste your API key...')) + '" />'
+      + '<button class="btn btn-sm" data-key-action="save" data-key-id="' + esc(p.id) + '">' + esc(ui('Save', 'Save')) + '</button>'
+      + '<button class="btn btn-sm" data-key-action="cancel" data-key-id="' + esc(p.id) + '">' + esc(ui('Cancel', 'Cancel')) + '</button>'
+      + '</div>';
+  }
   return h + '</div>';
 }
 function renderAccounts(){
@@ -762,6 +795,37 @@ function toggleNotch(id){
 }
 const accountsPane = document.getElementById('pane-accounts');
 accountsPane.addEventListener('click', e => {
+  const btn = e.target.closest('[data-key-action]');
+  if(btn){
+    const action = btn.dataset.keyAction;
+    const id = btn.dataset.keyId;
+    const form = document.getElementById('key-edit-' + id);
+    const input = document.getElementById('key-input-' + id);
+    if(action === 'edit'){
+      if(form){ form.style.display = 'flex'; if(input){ input.value = ''; input.focus(); } }
+    } else if(action === 'cancel'){
+      if(form){ form.style.display = 'none'; if(input) input.value = ''; }
+    } else if(action === 'save'){
+      const val = (input ? input.value : '').trim();
+      if(!val){ if(form) form.style.display = 'none'; return; }
+      invoke('set_api_key', { id, key: val })
+        .then(keys => {
+          if(Array.isArray(keys)) apiKeys = keys;
+          renderAccounts();
+          toast(ui('Key saved', 'Key saved'));
+        })
+        .catch(err => strip('Failed to save key: ' + errText(err)));
+    } else if(action === 'clear'){
+      invoke('set_api_key', { id, key: '' })
+        .then(keys => {
+          if(Array.isArray(keys)) apiKeys = keys;
+          renderAccounts();
+          toast(ui('Key removed', 'Key removed'));
+        })
+        .catch(err => strip('Failed to remove key: ' + errText(err)));
+    }
+    return;
+  }
   const np = e.target.closest('[data-np]');
   if(np){ toggleNotch(np.dataset.np); return; }
   if(e.target.closest('[data-remote="hooks"]')) hooks.toggle();
@@ -970,12 +1034,17 @@ function boot(){
     sel.dataset.previous = l;
     setUiLanguage(l === 'auto' && typeof resolved === 'string' ? resolved : l);
   });
+  call('get_api_keys', undefined, []).then(k => { if(Array.isArray(k)){ apiKeys = k; renderAccounts(); } });
   autostart.refresh();
   hooks.refresh();
 }
 /* Readings and the accent can change while the window is behind something else; coming back to it is
    when the old values are wrong, so that is when they are read again. */
-window.addEventListener('focus', () => { loadLook(); refreshOptions(); });
+window.addEventListener('focus', () => {
+  loadLook();
+  refreshOptions();
+  call('get_api_keys', undefined, []).then(k => { if(Array.isArray(k)){ apiKeys = k; renderAccounts(); } });
+});
 boot();
 </script>
 </body>

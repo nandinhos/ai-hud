@@ -70,7 +70,7 @@ struct BalanceResponse {
     balance_infos: Vec<BalanceInfo>,
 }
 
-fn resolve_api_key() -> Option<String> {
+pub fn resolve_api_key() -> Option<String> {
     // 1. Environment variable
     if let Ok(k) = std::env::var("DEEPSEEK_API_KEY") {
         let trimmed = k.trim().to_string();

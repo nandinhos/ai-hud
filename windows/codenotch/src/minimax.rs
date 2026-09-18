@@ -95,7 +95,7 @@ pub struct BaseResp {
 #[derive(Deserialize, Default)]
 pub struct RemainsResponse {
     #[serde(default)]
-    pub model_remains: Vec<ModelRemain>,
+    pub model_remains: Option<Vec<ModelRemain>>,
     #[serde(default)]
     pub base_resp: Option<BaseResp>,
 }
@@ -212,7 +212,24 @@ pub fn parse_remains_response(resp: &RemainsResponse) -> UsageSnapshot {
     let mut windows = Vec::new();
     let now = now_ms();
 
-    if let Some(item) = resp.model_remains.first() {
+    // 0. Verifica se o backend reportou erro em base_resp
+    if let Some(ref base) = resp.base_resp {
+        if let Some(code) = base.status_code {
+            if code != 0 && code != 1000 && code != 200 {
+                let msg = base.status_msg.clone().unwrap_or_else(|| format!("API Code {code}"));
+                return UsageSnapshot {
+                    status: "error".into(),
+                    windows: vec![],
+                    fetched_at: now,
+                    note: format!("MiniMax API: {msg}"),
+                    ..Default::default()
+                };
+            }
+        }
+    }
+
+    let remains = resp.model_remains.as_deref().unwrap_or_default();
+    if let Some(item) = remains.first() {
         let model = item.model_name.clone().unwrap_or_else(|| "MiniMax".into());
 
         // 1. Current interval usage (session window)
@@ -363,5 +380,22 @@ mod tests {
         assert_eq!(snap.windows.len(), 1);
         assert!(snap.windows[0].derived);
         assert_eq!(snap.windows[0].used, 0.0);
+    }
+
+    #[test]
+    fn parses_token_plan_with_null_model_remains() {
+        let json = r#"{
+            "model_remains": null,
+            "base_resp": {
+                "status_code": 0,
+                "status_msg": "success"
+            }
+        }"#;
+
+        let resp: RemainsResponse = serde_json::from_str(json).expect("valid json with null model_remains");
+        let snap = parse_remains_response(&resp);
+        assert_eq!(snap.status, "ok");
+        assert_eq!(snap.windows.len(), 1);
+        assert_eq!(snap.windows[0].id, "minimax-account");
     }
 }

@@ -104,7 +104,7 @@ pub struct OpenCodeUsageResponse {
     pub note: Option<String>,
 }
 
-fn resolve_api_key() -> Option<String> {
+pub fn resolve_api_key() -> Option<String> {
     // 1. Environment variables
     for var in &["OPENCODE_API_KEY", "OPENCODE_GO_KEY", "OPENCODE_KEY"] {
         if let Ok(k) = std::env::var(var) {

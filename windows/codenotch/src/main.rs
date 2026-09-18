@@ -331,6 +331,91 @@ fn get_codex(state: tauri::State<AppState>) -> usage::UsageSnapshot {
     state.codex.lock().unwrap().clone()
 }
 
+#[derive(serde::Serialize, Clone, Debug)]
+pub struct ProviderKeyInfo {
+    pub id: String,
+    pub name: String,
+    pub configured: bool,
+    pub masked: String,
+    pub file_path: String,
+}
+
+pub fn mask_api_key(key: &str) -> String {
+    let s = key.trim();
+    if s.is_empty() {
+        return String::new();
+    }
+    let chars: Vec<char> = s.chars().collect();
+    let len = chars.len();
+    if len <= 8 {
+        return "********".into();
+    }
+    let p_len = 6.min(len / 3).max(3);
+    let s_len = 6.min(len / 3).max(3);
+    let prefix: String = chars[..p_len].iter().collect();
+    let suffix: String = chars[len - s_len..].iter().collect();
+    format!("{prefix}********{suffix}")
+}
+
+#[tauri::command]
+fn get_api_keys() -> Vec<ProviderKeyInfo> {
+    let config_dir = config::config_path().parent().map(|p| p.to_path_buf()).unwrap_or_default();
+    
+    let providers = [
+        ("minimax", "MiniMax", minimax::resolve_api_key(), config_dir.join("minimax.key")),
+        ("deepseek", "DeepSeek", deepseek::resolve_api_key(), config_dir.join("deepseek.key")),
+        ("opencode", "OpenCode Go", opencode::resolve_api_key(), config_dir.join("opencode.key")),
+    ];
+
+    providers
+        .into_iter()
+        .map(|(id, name, resolved, key_file)| {
+            let configured = resolved.is_some();
+            let masked = resolved.map(|k| mask_api_key(&k)).unwrap_or_default();
+            ProviderKeyInfo {
+                id: id.into(),
+                name: name.into(),
+                configured,
+                masked,
+                file_path: key_file.to_string_lossy().to_string(),
+            }
+        })
+        .collect()
+}
+
+#[tauri::command]
+fn set_api_key(app: tauri::AppHandle, id: String, key: String) -> Result<Vec<ProviderKeyInfo>, String> {
+    let config_dir = config::config_path().parent().map(|p| p.to_path_buf()).unwrap_or_default();
+    let _ = std::fs::create_dir_all(&config_dir);
+
+    let key_file = match id.as_str() {
+        "minimax" => config_dir.join("minimax.key"),
+        "deepseek" => config_dir.join("deepseek.key"),
+        "opencode" => config_dir.join("opencode.key"),
+        _ => return Err(format!("Unknown provider for API key: {id}")),
+    };
+
+    let trimmed = key.trim();
+    if trimmed.is_empty() {
+        if key_file.exists() {
+            let _ = std::fs::remove_file(&key_file);
+        }
+    } else {
+        std::fs::write(&key_file, trimmed).map_err(|e| format!("Failed to write key file: {e}"))?;
+    }
+
+    // Refresh imediato do provedor correspondente
+    match id.as_str() {
+        "minimax" => minimax::request_refresh(),
+        "deepseek" => deepseek::request_refresh(),
+        "opencode" => opencode::request_refresh(),
+        _ => {}
+    }
+    broadcast(&app);
+
+    Ok(get_api_keys())
+}
+
 /// A click on a cell opens that provider's usage page
 #[tauri::command]
 fn open_provider_page(provider: String) {
@@ -341,7 +426,7 @@ fn open_provider_page(provider: String) {
         "deepseek" => "https://platform.deepseek.com/usage",
         "meta" => "https://www.meta.ai",
         "opencode" => "https://opencode.ai/auth",
-        "minimax" => "https://platform.minimax.io/console/personal-info",
+        "minimax" => "https://platform.minimax.io/console/plan",
         _ => "https://claude.ai/settings/usage",
     };
     let mut cmd = std::process::Command::new("cmd");
@@ -1248,7 +1333,9 @@ fn main() {
             open_settings,
             settings_window::get_system_look,
             settings_window::quit_app,
-            settings_window::open_author_page
+            settings_window::open_author_page,
+            get_api_keys,
+            set_api_key
         ])
         .setup(move |app| {
             let handle = app.handle().clone();
