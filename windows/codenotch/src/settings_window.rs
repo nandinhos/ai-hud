@@ -33,6 +33,7 @@ fn open_now(app: &AppHandle) {
         .maximizable(false)
         .decorations(false)
         .shadow(true)
+        .devtools(true)
         .center();
     // Without Mica the window stays opaque and the page draws solid surfaces instead
     if has_mica() {

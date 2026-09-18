@@ -23,7 +23,7 @@
     transition:transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, opacity 0.22s ease;
     will-change:transform, opacity;
   }
-  #pill:hover, #pill.expanded, body:has(#card.show) #pill{
+  #pill.hovered, #pill.expanded, body:has(#card.show) #pill{
     opacity: 1 !important;
   }
   .pill-header, .pill-footer{
@@ -915,12 +915,14 @@ document.addEventListener('mousemove',e=>{
   if(hot){
     clearTimeout(hideTimer);
     clearTimeout(pillCollapseTimer);
+    pill.classList.add('hovered');
     if(isPillCollapsed) expandPill();
     const id=cellAt(e.clientX,e.clientY);
     if(id&&id!==hoverId){ hoverId=id; if(card.classList.contains('show')){ renderCard(); armWatchdog(); } }
     if(!card.classList.contains('show')) showCard();
   }
   else {
+    pill.classList.remove('hovered');
     if(card.classList.contains('show')){
       if(hideLogged++<5) jslog(`mousemove left the hot area -> collapse at ${e.clientX},${e.clientY}`);
       scheduleHide();
@@ -930,12 +932,14 @@ document.addEventListener('mousemove',e=>{
 });
 document.addEventListener('mouseout',e=>{ // relatedTarget null = the cursor left the page
   if(!e.relatedTarget){
+    pill.classList.remove('hovered');
     if(card.classList.contains('show')){ if(hideLogged++<5) jslog('mouseout left the page -> collapse'); scheduleHide(); }
     schedulePillCollapse(400);
   }
 });
 listen('pointer_left',()=>{
   clearTimeout(hideTimer);
+  pill.classList.remove('hovered');
   hideCard();
   schedulePillCollapse(300);
 }).catch(()=>{});
@@ -973,6 +977,9 @@ pill.addEventListener('click',e=>{
     else notchOpacity=1.0;
     invoke('set_ui_flags',{notchVisible:!autoHide,trayVisible:true,notchOpacity:notchOpacity}).catch(()=>{});
     applyUiFlags({notch_visible:!autoHide,tray_visible:true,notch_opacity:notchOpacity});
+    // Feedback visual imediato: remove temporariamente hovered para exibir a opacidade escolhida na hora
+    pill.classList.remove('hovered');
+    setTimeout(()=>{ if(card.classList.contains('show')) pill.classList.add('hovered'); }, 850);
     notice(`Opacidade: ${Math.round(notchOpacity*100)}%`);
   } else if(btn.id==='btn-open-settings'){
     invoke('open_settings').catch(err=>notice('Erro ao abrir configurações: '+err));
