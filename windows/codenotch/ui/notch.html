@@ -101,8 +101,11 @@
   .w-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;flex-wrap:wrap;column-gap:8px}
   .w-label{color:#e8e8ea;font-weight:600;white-space:nowrap}
   .w-reset{color:#808080;font-size:11px;white-space:nowrap;margin-left:auto}
-  .w-track{height:4px;border-radius:2px;background:#2d2d2d;margin:6px 0 4px;overflow:hidden}
-  .w-fill{height:100%;border-radius:2px}
+  .w-track{height:6px;border-radius:3px;background:rgba(255,255,255,0.12);margin:7px 0 5px;overflow:hidden;position:relative}
+  .w-fill{height:100%;border-radius:3px;transition:width 0.28s cubic-bezier(0.16, 1, 0.3, 1);min-width:0}
+  .w-fill.tone-ample{background:#00FF88 !important;box-shadow:0 0 6px rgba(0,255,136,0.45)}
+  .w-fill.tone-watch{background:#F2FF00 !important;box-shadow:0 0 6px rgba(242,255,0,0.45)}
+  .w-fill.tone-crit{background:#FF3F00 !important;box-shadow:0 0 6px rgba(255,63,0,0.45)}
   .w-used{font-size:11px;color:#808080}
   .g-head{font-size:12px;font-weight:700;color:#e8e8ea;margin-top:12px}
   .g-box{border:1px solid #242424;border-radius:10px;padding:0 10px 8px;margin-top:6px}
@@ -130,6 +133,7 @@ const AMPLE='#00FF88', WATCH='#F2FF00', CRIT='#FF3F00';
 // is gone, and a green arc inside it reads as part of that scale. Waiting borrows the warning yellow.
 const TRACK='#303030', INK='#ffffff', DIM='#808080';
 const tone=f=> f>=0.8?CRIT : f>=0.5?WATCH : AMPLE;
+const toneClass=f=> f>=0.8?'tone-crit' : f>=0.5?'tone-watch' : 'tone-ample';
 // Whole percents, except where rounding would read as nothing used or nothing left, as the Mac's Percent does
 function smallPct(v){
   if(v<=0) return '0';
@@ -574,9 +578,12 @@ function renderCard(){
           ${!isMoney?`<div class="w-used">${esc(valStr)}</div>`:''}</div>`;
         continue;
       }
+      const rawUsed = typeof w.used === 'number' ? w.used : 0;
+      const pct = Math.min(Math.max(rawUsed, 0), 1) * 100;
+      const widthVal = pct > 0 ? `${Math.max(pct, 2.5).toFixed(1)}%` : '0%';
       html+=`<div class="win">
         <div class="w-row"><span class="w-label">${esc(textCopy(w.label))}</span><span class="w-reset">${resetCopy(w.resets_at)}</span></div>
-        <div class="w-track"><div class="w-fill" style="width:${(Math.min(w.used,1)*100).toFixed(0)}%;background:${tone(w.used)}"></div></div>
+        <div class="w-track"><div class="w-fill ${toneClass(rawUsed)}" style="width:${widthVal};background:${tone(rawUsed)}"></div></div>
         <div class="w-used">${esc(usedCopy(w))}</div>
       </div>`;
     }
