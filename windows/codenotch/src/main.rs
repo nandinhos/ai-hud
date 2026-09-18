@@ -1358,6 +1358,14 @@ fn main() {
             get_api_keys,
             set_api_key
         ])
+        .on_window_event(|window, event| {
+            if window.label() == "settings" {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+        })
         .setup(move |app| {
             let handle = app.handle().clone();
             place_notch(&handle);

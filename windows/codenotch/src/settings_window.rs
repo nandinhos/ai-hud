@@ -13,6 +13,12 @@ const FIRST_MICA_BUILD: u32 = 22000;
 /// Queued on the main thread for every caller: a window built inside a synchronous command
 /// deadlocks on Windows, and `open_settings` is one.
 pub fn open(app: &AppHandle) {
+    if let Some(w) = app.get_webview_window(LABEL) {
+        let _ = w.unminimize();
+        let _ = w.show();
+        let _ = w.set_focus();
+        return;
+    }
     let handle = app.clone();
     let _ = app.run_on_main_thread(move || open_now(&handle));
 }

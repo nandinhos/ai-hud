@@ -658,7 +658,9 @@ document.getElementById('quit').addEventListener('click', () => {
 });
 document.getElementById('close').addEventListener('click', () => {
   try {
-    window.__TAURI__.window.getCurrentWindow().close().catch(e => strip('close failed: ' + errText(e)));
+    window.__TAURI__.window.getCurrentWindow().hide().catch(() => {
+      window.__TAURI__.window.getCurrentWindow().close().catch(e => strip('close failed: ' + errText(e)));
+    });
   } catch(e) { strip('close failed: ' + errText(e)); }
 });
 
