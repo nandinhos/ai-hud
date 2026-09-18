@@ -19,8 +19,38 @@
     border:1px solid #2e2e2e;border-right:none;
     box-shadow:0 4px 20px rgba(0,0,0,0.5);
     display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;
-    transition:transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease;
-    will-change:transform;
+    opacity: var(--notch-opacity, 1);
+    transition:transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, opacity 0.22s ease;
+    will-change:transform, opacity;
+  }
+  #pill:hover, #pill.expanded, body:has(#card.show) #pill{
+    opacity: 1 !important;
+  }
+  .pill-header, .pill-footer{
+    display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;width:100%;
+    transition:opacity 0.2s ease;
+  }
+  .pill-btn{
+    width:22px;height:22px;display:inline-grid;place-items:center;
+    background:transparent;border:0;border-radius:4px;
+    color:rgba(255,255,255,0.45);cursor:pointer;padding:0;
+    transition:color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  }
+  .pill-btn:hover{
+    color:#fff;background:rgba(255,255,255,0.18);transform:scale(1.1);
+  }
+  .pill-btn.active{
+    color:var(--accent, #00FF88);
+  }
+  .pill-btn svg{
+    width:13px;height:13px;fill:currentColor;
+  }
+  .pill-sep{
+    width:26px;height:1px;background:rgba(255,255,255,0.12);margin:2px 0;flex:none;
+    transition:opacity 0.2s ease;
+  }
+  #pill.collapsed .pill-header, #pill.collapsed .pill-footer, #pill.collapsed .pill-sep{
+    opacity:0;pointer-events:none;
   }
   #pill.collapsed{
     transform:translateY(-50%) translateX(calc(100% - 9px));
@@ -548,11 +578,28 @@ function svgArc(r,frac,color,width,extra=''){
 function renderRing(){
   const ps=providers();
   // Rebuild the DOM only when the structure changes (never swap the element under the cursor)
-  const want=ps.map(p=>p.id+':'+(glyphs[p.id]?glyphs[p.id].kind:'-')).join(',');
+  const want=ps.map(p=>p.id+':'+(glyphs[p.id]?glyphs[p.id].kind:'-')).join(',')+`:${autoHide}:${notchOpacity}`;
   if(pill.dataset.cells!==want){
-    pill.innerHTML='<div class="notch-handle"></div>'+ps.map(p=>`<div class="cell" data-p="${p.id}">
-      <div class="ringwrap"><svg class="ring" viewBox="0 0 56 56"></svg><div class="glyph ${(!glyphs[p.id]&&p.glyph.length>1)?'small':''}">${glyphHtml(p)}</div></div>
-      <div class="pct">—</div></div>`).join('');
+    const pinActive = !autoHide ? 'active' : '';
+    pill.innerHTML=`<div class="notch-handle"></div>
+      <div class="pill-header">
+        <button class="pill-btn ${pinActive}" id="btn-toggle-pin" title="${autoHide ? 'Fixar na tela (Sempre visível)' : 'Auto-ocultar (Modo gaveta)'}">
+          <svg viewBox="0 0 16 16"><path d="M4.146.146A.5.5 0 0 1 4.5 0h7a.5.5 0 0 1 .5.5c0 .68-.342 1.174-.646 1.479-.283.282-.63.51-.958.694l-.328.181v3.284l.95 1.425a.5.5 0 0 1-.416.737H8.5v6.5a.5.5 0 0 1-1 0V8.299H3.398a.5.5 0 0 1-.416-.737l.95-1.425V2.854l-.328-.181c-.328-.184-.675-.412-.958-.694C2.342 1.674 2 1.18 2 .5a.5.5 0 0 1 .5-.5h1.646z"/></svg>
+        </button>
+        <button class="pill-btn" id="btn-toggle-opacity" title="Alternar Transparência (${Math.round(notchOpacity*100)}%)">
+          <svg viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0-1.5A5.5 5.5 0 0 0 8 2.5v11z"/></svg>
+        </button>
+      </div>
+      <div class="pill-sep"></div>
+      ${ps.map(p=>`<div class="cell" data-p="${p.id}">
+        <div class="ringwrap"><svg class="ring" viewBox="0 0 56 56"></svg><div class="glyph ${(!glyphs[p.id]&&p.glyph.length>1)?'small':''}">${glyphHtml(p)}</div></div>
+        <div class="pct">—</div></div>`).join('')}
+      <div class="pill-sep"></div>
+      <div class="pill-footer">
+        <button class="pill-btn" id="btn-open-settings" title="Configurações (Settings)">
+          <svg viewBox="0 0 16 16"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319z"/></svg>
+        </button>
+      </div>`;
     pill.dataset.cells=want;
   }
   for(const p of ps){
@@ -724,6 +771,34 @@ const card=document.getElementById('card'), pill=document.getElementById('pill')
 let hideTimer=null;
 let isPillCollapsed=false;
 let pillCollapseTimer=null;
+let autoHide=false; // false = Sempre visível (Fixado na tela); true = Auto-ocultar (Modo gaveta retrátil)
+let notchOpacity=1.0;
+
+function applyUiFlags(v){
+  if(!v||typeof v!=='object')return;
+  const isVisible=(v.notch_visible!==undefined?v.notch_visible:v.notchVisible)!==false;
+  autoHide=!isVisible;
+  const op=typeof v.notch_opacity==='number'?v.notch_opacity:v.notchOpacity;
+  if(typeof op==='number'){
+    notchOpacity=Math.max(0.2,Math.min(1.0,op));
+  }
+  document.documentElement.style.setProperty('--notch-opacity',notchOpacity);
+  const pinBtn=document.getElementById('btn-toggle-pin');
+  if(pinBtn){
+    pinBtn.classList.toggle('active',!autoHide);
+    pinBtn.title=autoHide?'Fixar na tela (Sempre visível)':'Auto-ocultar (Modo gaveta)';
+  }
+  const opBtn=document.getElementById('btn-toggle-opacity');
+  if(opBtn){
+    opBtn.title=`Alternar Transparência (${Math.round(notchOpacity*100)}%)`;
+  }
+  if(!autoHide){
+    clearTimeout(pillCollapseTimer);
+    expandPill();
+  } else {
+    schedulePillCollapse(1200);
+  }
+}
 
 function expandPill(){
   clearTimeout(pillCollapseTimer);
@@ -735,7 +810,7 @@ function expandPill(){
 }
 
 function collapsePill(){
-  if(dragging || card.classList.contains('show') || isPillCollapsed) return;
+  if(!autoHide || dragging || card.classList.contains('show') || isPillCollapsed) return;
   isPillCollapsed=true;
   pill.classList.add('collapsed');
   reportHot();
@@ -744,6 +819,7 @@ function collapsePill(){
 
 function schedulePillCollapse(delay=900){
   clearTimeout(pillCollapseTimer);
+  if(!autoHide) return;
   pillCollapseTimer=setTimeout(()=>{
     if(!card.classList.contains('show') && !dragging) collapsePill();
   }, delay);
@@ -871,6 +947,7 @@ listen('state',()=>{if(card.classList.contains('show'))armWatchdog();}).catch(()
 let press=null, dragging=false;
 pill.addEventListener('mousedown',e=>{
   if(e.button!==0)return;
+  if(e.target.closest('.pill-btn')) return;
   if(isPillCollapsed){
     expandPill();
     press=null;
@@ -878,6 +955,28 @@ pill.addEventListener('mousedown',e=>{
     return;
   }
   press={x:e.clientX,y:e.clientY,id:cellAt(e.clientX,e.clientY)||hoverId};
+});
+pill.addEventListener('click',e=>{
+  const btn=e.target.closest('.pill-btn');
+  if(!btn) return;
+  e.stopPropagation();
+  e.preventDefault();
+  if(btn.id==='btn-toggle-pin'){
+    autoHide=!autoHide;
+    const isVisible=!autoHide;
+    invoke('set_ui_flags',{notchVisible:isVisible,trayVisible:true,notchOpacity:notchOpacity}).catch(()=>{});
+    applyUiFlags({notch_visible:isVisible,tray_visible:true,notch_opacity:notchOpacity});
+    notice(autoHide?'Modo: Auto-ocultar (Gaveta)':'Modo: Sempre visível');
+  } else if(btn.id==='btn-toggle-opacity'){
+    if(notchOpacity>=0.95) notchOpacity=0.7;
+    else if(notchOpacity>=0.65) notchOpacity=0.4;
+    else notchOpacity=1.0;
+    invoke('set_ui_flags',{notchVisible:!autoHide,trayVisible:true,notchOpacity:notchOpacity}).catch(()=>{});
+    applyUiFlags({notch_visible:!autoHide,tray_visible:true,notch_opacity:notchOpacity});
+    notice(`Opacidade: ${Math.round(notchOpacity*100)}%`);
+  } else if(btn.id==='btn-open-settings'){
+    invoke('open_settings').catch(err=>notice('Erro ao abrir configurações: '+err));
+  }
 });
 document.addEventListener('mousemove',e=>{
   if(!press||dragging)return;
@@ -888,7 +987,8 @@ document.addEventListener('mousemove',e=>{
 });
 document.addEventListener('mouseup',e=>{
   if(e.button!==0)return;
-  if(press&&!dragging) invoke('open_provider_page',{provider:press.id}).catch(()=>{});
+  if(e.target.closest('.pill-btn')){ press=null; return; }
+  if(press&&!dragging&&press.id) invoke('open_provider_page',{provider:press.id}).catch(()=>{});
   press=null;
 });
 listen('drag_end',()=>{dragging=false;press=null;reportHot();schedulePillCollapse(1200);}).catch(()=>{});
@@ -934,8 +1034,9 @@ invoke('get_glyphs').then(g=>{glyphs=g||glyphs;renderRing();}).catch(()=>{});
 invoke('get_codex').then(u=>{codexSnap=u||codexSnap;renderRing();}).catch(()=>{});
 invoke('get_usage').then(u=>{usage=u||usage;renderRing();}).catch(e=>notice('get_usage failed: '+e));
 invoke('get_state').then(s=>{stateSnap=s||stateSnap;setUiLanguage(stateSnap.lang_resolved);renderRing();}).catch(()=>{});
+listen('ui_flags',e=>applyUiFlags(e.payload)).catch(()=>{});
+invoke('get_ui_flags').then(applyUiFlags).catch(()=>{});
 setInterval(renderRing,30_000); // stale state and reset copy move with time
-schedulePillCollapse(3500); // start expanded to demonstrate presence, then subtly collapse to edge
 </script>
 </body>
 </html>

@@ -977,54 +977,75 @@ fn get_app_icon() -> Option<String> {
 
 // ---------------- what is on screen at all ----------------
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 struct UiFlags {
     notch_visible: bool,
     tray_visible: bool,
+    notch_opacity: f64,
 }
 
 #[tauri::command]
 fn get_ui_flags(app: AppHandle) -> UiFlags {
     let st = app.state::<AppState>();
     let c = st.cfg.lock().unwrap();
-    UiFlags { notch_visible: c.notch_visible, tray_visible: c.tray_visible }
+    UiFlags {
+        notch_visible: c.notch_visible,
+        tray_visible: c.tray_visible,
+        notch_opacity: c.notch_opacity,
+    }
 }
 
 /// Hiding both would leave the app running with nothing to click, so the tray icon is kept
 /// whenever the notch is off. The answer says what was actually stored, so the settings window can
 /// show the corrected state rather than a lie.
 #[tauri::command]
-fn set_ui_flags(app: AppHandle, notch_visible: bool, tray_visible: bool) -> UiFlags {
+fn set_ui_flags(
+    app: AppHandle,
+    notch_visible: bool,
+    tray_visible: bool,
+    notch_opacity: Option<f64>,
+) -> UiFlags {
     let flags = {
         let st = app.state::<AppState>();
         let mut c = st.cfg.lock().unwrap();
         c.notch_visible = notch_visible;
         c.tray_visible = if notch_visible { tray_visible } else { true };
+        if let Some(op) = notch_opacity {
+            c.notch_opacity = op.clamp(0.2, 1.0);
+        }
         config::save(&c);
-        UiFlags { notch_visible: c.notch_visible, tray_visible: c.tray_visible }
+        UiFlags {
+            notch_visible: c.notch_visible,
+            tray_visible: c.tray_visible,
+            notch_opacity: c.notch_opacity,
+        }
     };
     apply_visibility(&app);
     flags
 }
 
-/// Puts the two switches into effect.
+/// Puts the visibility switches and opacity into effect.
 pub fn apply_visibility(app: &AppHandle) {
-    let (notch, tray_on) = {
+    let (tray_on, flags) = {
         let st = app.state::<AppState>();
         let c = st.cfg.lock().unwrap();
-        (c.notch_visible, c.tray_visible)
+        (
+            c.tray_visible,
+            UiFlags {
+                notch_visible: c.notch_visible,
+                tray_visible: c.tray_visible,
+                notch_opacity: c.notch_opacity,
+            },
+        )
     };
     if let Some(w) = app.get_webview_window("notch") {
-        if notch {
-            let _ = w.show();
-            place_notch(app);
-        } else {
-            let _ = w.hide();
-        }
+        let _ = w.show();
+        place_notch(app);
     }
     if let Some(t) = app.tray_by_id("main") {
         let _ = t.set_visible(tray_on);
     }
+    let _ = app.emit("ui_flags", &flags);
 }
 
 // ---------------- settings that used to live in the tray menu ----------------

@@ -84,6 +84,13 @@ pub struct Config {
     /// leave the app running with no way to reach it.
     #[serde(default = "yes")]
     pub tray_visible: bool,
+    /// Opacity of the notch pill when idling (0.2 - 1.0, default 1.0)
+    #[serde(default = "default_notch_opacity")]
+    pub notch_opacity: f64,
+}
+
+fn default_notch_opacity() -> f64 {
+    1.0
 }
 
 fn default_notch_y() -> f64 {
@@ -151,6 +158,7 @@ impl Default for Config {
             antigravity_model: default_antigravity_model(),
             notch_visible: true,
             tray_visible: true,
+            notch_opacity: default_notch_opacity(),
         }
     }
 }

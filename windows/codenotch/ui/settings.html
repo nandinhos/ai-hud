@@ -156,6 +156,8 @@
         <div class="group">
           <div class="item"><span>Show</span><span class="seg" id="seg-show"><button data-v="show">Always show</button><button data-v="hide">Hide</button></span></div>
           <div class="item cap" id="cap-show" data-dynamic></div>
+          <div class="item"><span>Opacity</span><span class="seg" id="seg-opacity"><button data-v="1">100%</button><button data-v="0.8">80%</button><button data-v="0.6">60%</button><button data-v="0.4">40%</button></span></div>
+          <div class="item cap" id="cap-opacity" data-dynamic></div>
           <div class="item"><span>Size</span><span class="seg" id="seg-size"><button data-v="0.8">Small</button><button data-v="1">Medium</button><button data-v="1.25">Large</button></span></div>
           <div class="item cap" id="cap-size" data-dynamic></div>
           <div class="item"><span>Weekly ring</span><span class="seg" id="seg-weekly"><button data-v="off">Off</button><button data-v="inside">Inside</button><button data-v="outside">Outside</button></span></div>
@@ -474,6 +476,8 @@ const PT_STATIC = {
   'Let Claude Code notify Codenotch':'Permitir que o Claude Code notifique o Codenotch',
   'Turning this on adds a few lines to your Claude Code settings file so that Claude Code sends Codenotch a short message when a session starts, when it is working, when it is waiting for your answer, and when it finishes. That is what makes the ring spin and the amber ring pulse.':'Ativar esta opção adiciona algumas linhas ao arquivo de configurações do Claude Code para que ele envie notificações quando uma sessão iniciar, trabalhar, aguardar resposta ou terminar.',
   'Notch':'Notch / HUD', 'Show':'Exibir', 'Always show':'Sempre exibir', 'Hide':'Ocultar',
+  'Opacity':'Opacidade',
+  'Adjusts the rest opacity of the notch. Hovering brings it to 100%.':'Ajusta a opacidade do notch em repouso. Ao passar o mouse, a opacidade volta a 100%.',
   'Size':'Tamanho', 'Small':'Pequeno', 'Medium':'Médio', 'Large':'Grande',
   'Takes the least room on the edge. Readable, but not from across the desk.':'Ocupa o menor espaço na borda da tela.',
   'The size the notch was drawn at.':'O tamanho padrão do notch.',
@@ -482,8 +486,9 @@ const PT_STATIC = {
   'One ring per provider, showing the headline limit. The weekly allowance stays in the hover card.':'Um anel por provedor com o limite principal. A cota semanal fica no card de detalhes.',
   'A thinner ring for the weekly limit, drawn inside the main one. It shares the gap with the working indicator.':'Um anel mais fino para o limite semanal, desenhado dentro do principal.',
   'A thinner ring for the weekly limit, drawn around the main one, in the margin between the ring and the notch edge.':'Um anel mais fino para o limite semanal, desenhado ao redor do principal.',
-  'The notch stays open with every reading visible.':'O notch permanece aberto com todas as leituras visíveis.',
-  'The black pill against the right-hand edge of the screen, with one ring per tool. Turn it off and the pill disappears; Codenotch keeps counting your usage either way.':'A pílula na borda direita da tela, com um anel por ferramenta. Desative para ocultar; o Codenotch continua monitorando o uso normalmente.',
+  'The notch stays open with every reading visible.':'O notch fica sempre visível na tela com todas as leituras abertas.',
+  'The notch auto-hides against the screen edge and expands smoothly on mouse hover.':'O notch recolhe discretamente para a borda da tela e expande automaticamente ao passar o mouse.',
+  'The black pill against the right-hand edge of the screen, with one ring per tool. Turn it off and the pill disappears; Codenotch keeps counting your usage either way.':'O notch recolhe discretamente para a borda da tela e expande automaticamente ao passar o mouse.',
   'Recentre':'Recentralizar',
   'The pill can be dragged up and down the right-hand edge. If it has ended up somewhere you cannot see it — off the bottom of a screen you have unplugged, say — this drops it back into the middle of the edge.':'A pílula pode ser arrastada ao longo da borda direita. Este botão a reposiciona no centro da tela caso ela tenha saído da área visível.',
   'The notch is back in the middle':'O notch foi reposicionado no centro da tela',
@@ -843,17 +848,23 @@ accountsPane.addEventListener('change', e => {
    Two choices, one command. Hiding both would leave nothing to click, so Rust keeps the tray icon
    whenever the notch is hidden, and its answer says what was actually stored. */
 const SHOW_WHY = 'The notch stays open with every reading visible.';
-const HIDE_WHY = 'The black pill against the right-hand edge of the screen, with one ring per tool. Turn it off and the pill disappears; Codenotch keeps counting your usage either way.';
+const HIDE_WHY = 'The notch auto-hides against the screen edge and expands smoothly on mouse hover.';
+const OPACITY_WHY = 'Adjusts the rest opacity of the notch. Hovering brings it to 100%.';
 const TRAY_WHY = 'The small icon down by the clock. Right-clicking it opens this window, refreshes the readings, or quits Codenotch.';
 const NO_TRAY_WHY = 'No icon in the system tray. Open Codenotch again from the Start menu to bring these settings back.';
 const HELD_ON = 'Held on: the notch is hidden, so this icon is the only way left to reach Codenotch. Switch the notch back on first if you want to hide it.';
 const KEPT_ON = 'The taskbar icon has been kept on. With the notch hidden it is the only way left to open this window or to quit Codenotch, so Codenotch will not let both of them be switched off at the same time.';
-let flags = { notch:true, tray:true }, flagsBusy = false, flagsCorrected = false;
+let flags = { notch:true, tray:true, opacity:1.0 }, flagsBusy = false, flagsCorrected = false;
 
 function readFlags(v){
   const nv = v && (v.notch_visible !== undefined ? v.notch_visible : v.notchVisible);
   const tv = v && (v.tray_visible !== undefined ? v.tray_visible : v.trayVisible);
-  return { notch: nv !== false, tray: tv !== false };
+  const op = v && (v.notch_opacity !== undefined ? v.notch_opacity : v.notchOpacity);
+  return {
+    notch: nv !== false,
+    tray: tv !== false,
+    opacity: typeof op === 'number' ? op : 1.0
+  };
 }
 function drawSeg(id, value, disabled){
   for(const b of document.querySelectorAll('#' + id + ' button')){
@@ -866,20 +877,24 @@ function drawSeg(id, value, disabled){
 function renderFlags(){
   drawSeg('seg-show', flags.notch ? 'show' : 'hide');
   drawSeg('seg-tray', flags.tray ? 'tray' : 'none', flags.notch ? [] : ['none']);
+  drawSeg('seg-opacity', String(flags.opacity));
   document.getElementById('cap-show').textContent = flags.notch ? ui(SHOW_WHY, SHOW_WHY) : ui(HIDE_WHY, HIDE_WHY);
   const trayWhy = !flags.notch ? HELD_ON : flags.tray ? TRAY_WHY : NO_TRAY_WHY;
   document.getElementById('cap-tray').textContent = ui(trayWhy, trayWhy);
+  const capOpacity = document.getElementById('cap-opacity');
+  if(capOpacity) capOpacity.textContent = ui(OPACITY_WHY, OPACITY_WHY);
   const fix = document.getElementById('flags-fix');
   fix.hidden = !flagsCorrected;
   fix.textContent = ui(KEPT_ON, KEPT_ON);
 }
-function saveFlags(wantNotch, wantTray){
+function saveFlags(wantNotch, wantTray, wantOpacity){
   if(flagsBusy) return;
   flagsBusy = true;
-  const asked = { notch:wantNotch, tray:wantTray };
+  const op = typeof wantOpacity === 'number' ? wantOpacity : (flags.opacity || 1.0);
+  const asked = { notch:wantNotch, tray:wantTray, opacity:op };
   flags = asked;
   renderFlags();
-  invoke('set_ui_flags', { notchVisible: wantNotch, trayVisible: wantTray })
+  invoke('set_ui_flags', { notchVisible: wantNotch, trayVisible: wantTray, notchOpacity: op })
     .then(v => {
       flags = readFlags(v);
       flagsCorrected = flags.notch !== asked.notch || flags.tray !== asked.tray;
@@ -896,14 +911,23 @@ document.getElementById('seg-show').addEventListener('click', e => {
   const b = e.target.closest('button');
   if(!b || b.disabled) return;
   const notch = b.dataset.v === 'show';
-  if(notch !== flags.notch) saveFlags(notch, flags.tray);
+  if(notch !== flags.notch) saveFlags(notch, flags.tray, flags.opacity);
 });
 document.getElementById('seg-tray').addEventListener('click', e => {
   const b = e.target.closest('button');
   if(!b || b.disabled) return;
   const tray = b.dataset.v === 'tray';
-  if(tray !== flags.tray) saveFlags(flags.notch, tray);
+  if(tray !== flags.tray) saveFlags(flags.notch, tray, flags.opacity);
 });
+const segOpacity = document.getElementById('seg-opacity');
+if(segOpacity){
+  segOpacity.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if(!b || b.disabled) return;
+    const op = parseFloat(b.dataset.v);
+    if(!isNaN(op) && op !== flags.opacity) saveFlags(flags.notch, flags.tray, op);
+  });
+}
 
 /* ---- Appearance: size ------------------------------------------------------ */
 const SIZE_WHY = {
