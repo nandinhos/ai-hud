@@ -555,7 +555,7 @@ function renderCard(){
   if(staleOf(snap)&&snap.fetched_at) html+=`<div class="c-sub">${textCopy('Updated')} ${ago(snap.fetched_at)}</div>`;
   if(snap.status==='needsAuth'){
     const who={claude:'Sign in to Claude Code to see usage.',cursor:'Sign in to Cursor to see usage.',codex:'Sign in to Codex to see usage.',gemini:'Sign in to Antigravity to see usage.',deepseek:'Configure DEEPSEEK_API_KEY to see usage.',meta:'Run Meta Muse CLI to see usage.',opencode:'Configure OPENCODE_API_KEY or %APPDATA%\\codenotch\\opencode.key to see usage.'}[p.id]||'';
-    html+=`<div class="c-note">${textCopy(who)}<br>${esc(textCopy(snap.note||''))}</div>`;
+    html+=`<div class="c-note">${esc(textCopy(who))}<br>${esc(textCopy(snap.note||''))}</div>`;
   }else if(!snap.windows.length){
     html+=`<div class="c-note">${esc(textCopy(snap.note||'Waiting for first reading…'))}</div>`;
   }else{
@@ -570,8 +570,8 @@ function renderCard(){
       if(w.count!=null){
         const isMoney = w.id.includes('usd') || w.id.includes('cny') || w.id.includes('saldo') || w.id.includes('balance');
         const valStr = isMoney ? `$${(w.count/100).toFixed(2)}` : (w.count>0?`~${w.count} ${textCopy(w.count===1?'request today':'requests today')}`:textCopy('no requests today'));
-        html+=`<div class="win"><div class="w-row"><span class="w-label">${esc(textCopy(w.label))}</span><span class="w-reset" style="font-weight:600;color:${isMoney?AMPLE:'inherit'}">${isMoney?valStr:''}</span></div>
-          ${!isMoney?`<div class="w-used">${valStr}</div>`:''}</div>`;
+        html+=`<div class="win"><div class="w-row"><span class="w-label">${esc(textCopy(w.label))}</span><span class="w-reset" style="font-weight:600;color:${isMoney?AMPLE:'inherit'}">${isMoney?esc(valStr):''}</span></div>
+          ${!isMoney?`<div class="w-used">${esc(valStr)}</div>`:''}</div>`;
         continue;
       }
       html+=`<div class="win">

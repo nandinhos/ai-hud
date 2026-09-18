@@ -14,3 +14,8 @@ target/
 *.token
 *.log
 *.exe
+.env*
+*credentials*.json
+*balance*.txt
+*.secret
+

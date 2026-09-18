@@ -132,18 +132,27 @@ pub fn poll_once() -> UsageSnapshot {
     {
         Ok(r) => r,
         Err(e) => {
+            let is_auth = matches!(&e, ureq::Error::Status(401, _) | ureq::Error::Status(403, _));
             let note = match &e {
                 ureq::Error::Status(401, _) | ureq::Error::Status(403, _) => "DeepSeek API key invalid (401/403)",
                 ureq::Error::Status(429, _) => "DeepSeek API rate limited (429)",
                 _ => "Failed to reach DeepSeek API",
             };
+            let prev = load_persisted();
+            let windows = if !is_auth && !prev.windows.is_empty() {
+                prev.windows
+            } else {
+                vec![]
+            };
             return UsageSnapshot {
-                status: if matches!(&e, ureq::Error::Status(401, _) | ureq::Error::Status(403, _)) {
+                status: if is_auth {
                     "needsAuth".into()
+                } else if !windows.is_empty() {
+                    "stale".into()
                 } else {
                     "error".into()
                 },
-                windows: vec![],
+                windows,
                 fetched_at: now_ms(),
                 note: format!("{note}: {e}"),
                 ..Default::default()
@@ -240,7 +249,7 @@ pub fn spawn_poller(app: AppHandle) {
     std::thread::spawn(move || {
         loop {
             let snap = poll_once();
-            if snap.status != "absent" {
+            if snap.status != "absent" && (!snap.windows.is_empty() || snap.status == "needsAuth") {
                 persist(&snap);
             }
             {

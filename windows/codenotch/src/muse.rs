@@ -251,6 +251,15 @@ pub fn poll_once() -> UsageSnapshot {
     }
 }
 
+fn sleep_interruptible(secs: u64) {
+    for _ in 0..secs {
+        if REFRESH.swap(false, std::sync::atomic::Ordering::Relaxed) {
+            break;
+        }
+        std::thread::sleep(Duration::from_secs(1));
+    }
+}
+
 pub fn start(app: AppHandle) {
     spawn_poller(app);
 }
@@ -269,12 +278,8 @@ pub fn spawn_poller(app: AppHandle) {
             }
             let _ = app.emit("muse", &snap);
 
-            for _ in 0..POLL_SECS {
-                if REFRESH.swap(false, std::sync::atomic::Ordering::Relaxed) {
-                    break;
-                }
-                std::thread::sleep(Duration::from_secs(1));
-            }
+            sleep_interruptible(POLL_SECS);
         }
     });
 }
+

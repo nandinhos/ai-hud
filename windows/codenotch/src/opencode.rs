@@ -29,6 +29,15 @@ pub fn request_refresh() {
     REFRESH.store(true, std::sync::atomic::Ordering::Relaxed);
 }
 
+fn sleep_interruptible(total_secs: u64) {
+    for _ in 0..total_secs {
+        if REFRESH.swap(false, std::sync::atomic::Ordering::Relaxed) {
+            return;
+        }
+        std::thread::sleep(Duration::from_secs(1));
+    }
+}
+
 fn now_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -213,18 +222,22 @@ pub fn poll_once() -> UsageSnapshot {
             };
         }
         Err(ureq::Error::Status(429, _)) => {
+            let prev = load_persisted();
+            let windows = prev.windows;
             return UsageSnapshot {
-                status: "error".into(),
-                windows: vec![],
+                status: if !windows.is_empty() { "stale".into() } else { "error".into() },
+                windows,
                 fetched_at: now_ms(),
                 note: "OpenCode API rate limited (429)".into(),
                 ..Default::default()
             };
         }
         Err(e) => {
+            let prev = load_persisted();
+            let windows = prev.windows;
             return UsageSnapshot {
-                status: "error".into(),
-                windows: vec![],
+                status: if !windows.is_empty() { "stale".into() } else { "error".into() },
+                windows,
                 fetched_at: now_ms(),
                 note: format!("Failed to reach OpenCode Go API: {e}"),
                 ..Default::default()
@@ -331,31 +344,25 @@ pub fn poll_once() -> UsageSnapshot {
         ..Default::default()
     };
 
-    persist(&snap);
+    if snap.status != "absent" && (!snap.windows.is_empty() || snap.status == "needsAuth") {
+        persist(&snap);
+    }
     snap
 }
 
 pub fn start(app: AppHandle) {
     std::thread::spawn(move || {
-        let mut last_poll = SystemTime::UNIX_EPOCH;
         loop {
-            let force = REFRESH.swap(false, std::sync::atomic::Ordering::Relaxed);
-            let elapsed = SystemTime::now()
-                .duration_since(last_poll)
-                .unwrap_or(Duration::from_secs(9999));
-
-            if force || elapsed >= Duration::from_secs(POLL_SECS) {
-                let snap = poll_once();
-                last_poll = SystemTime::now();
-
+            let snap = poll_once();
+            {
                 let st = app.state::<AppState>();
                 *st.opencode.lock().unwrap() = snap.clone();
-
-                let _ = app.emit("opencode_usage", &snap);
-                let _ = app.emit("usage", ());
             }
 
-            std::thread::sleep(Duration::from_millis(500));
+            let _ = app.emit("opencode_usage", &snap);
+            let _ = app.emit("usage", ());
+
+            sleep_interruptible(POLL_SECS);
         }
     });
 }

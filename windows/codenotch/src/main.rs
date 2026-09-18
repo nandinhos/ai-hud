@@ -90,7 +90,10 @@ pub fn place_notch(app: &AppHandle) {
         // window; if it still reports a different scale afterwards, it is pinned once more.
         let ms = mon.scale_factor();
         let size = ui_scale(app);
-        let target = tauri::PhysicalSize::new((NOTCH_W * ms * size).round() as u32, (NOTCH_H * ms * size).round() as u32);
+        let mh_f = mon.size().height as f64;
+        let max_logical_h = (mh_f / ms - 30.0).max(400.0);
+        let effective_h = NOTCH_H.min(max_logical_h);
+        let target = tauri::PhysicalSize::new((NOTCH_W * ms * size).round() as u32, (effective_h * ms * size).round() as u32);
         let _ = w.set_size(target);
         zoom_notch(&w, ms, size);
         // Position from the window's measured physical size — deriving it from the scale factor
@@ -110,7 +113,7 @@ pub fn place_notch(app: &AppHandle) {
         let y = (mon.position().y as f64 + mh as f64 * ratio - wh as f64 / 2.0).round() as i32;
         let y = y.clamp(mon.position().y, mon.position().y + (mh - wh).max(0));
         let _ = w.set_position(tauri::PhysicalPosition::new(x, y));
-        if w.outer_size().map(|s| s.width != target.width).unwrap_or(false) {
+        if w.outer_size().map(|s| s.width != target.width || s.height != target.height).unwrap_or(false) {
             let _ = w.set_size(target);
             let x = mon.position().x + mon.size().width as i32 - target.width as i32;
             let _ = w.set_position(tauri::PhysicalPosition::new(x, y));
@@ -328,7 +331,7 @@ fn open_provider_page(provider: String) {
         "cursor" => "https://cursor.com/dashboard",
         "gemini" => "https://antigravity.google",
         "deepseek" => "https://platform.deepseek.com/usage",
-        "meta" => "https://about.meta.com",
+        "meta" => "https://www.meta.ai",
         "opencode" => "https://opencode.ai/auth",
         _ => "https://claude.ai/settings/usage",
     };
