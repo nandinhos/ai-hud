@@ -162,6 +162,7 @@
           <div class="item"><span>Language</span>
             <select id="lang" aria-label="Language">
               <option value="auto">Follow system</option>
+              <option value="pt">Português (Brasil)</option>
               <option value="en">English</option>
               <option value="zh">&#20013;&#25991;</option>
               <option value="ja">&#26085;&#26412;&#35486;</option>
@@ -453,9 +454,46 @@ const KO_STATIC = {
   'No icon in the system tray. Open Codenotch again from the Start menu to bring these settings back.':'시스템 트레이에 아이콘이 없습니다. 이 설정을 다시 가져오려면 시작 메뉴에서 Codenotch를 다시 여세요.',
   'Model data':'모델 데이터'
 };
-const STATIC_TEXT = { ru: RU_STATIC, zh: ZH_STATIC, ja: JA_STATIC, ko: KO_STATIC };
+const PT_STATIC = {
+  'Settings sections':'Seções de configurações', 'Close':'Fechar',
+  'Accounts':'Contas', 'Appearance':'Aparência', 'General':'Geral', 'Quit Codenotch':'Sair do Codenotch',
+  'Connected':'Conectado', 'Not connected':'Não conectado',
+  'These have no ring to place. Switch one on and it joins the end of the list above.':'Estes não têm anel posicionado. Ative um para adicioná-lo à lista acima.',
+  'One provider always stays ticked, so the pill is never empty.':'Pelo menos um provedor sempre permanece ativo para que o HUD não fique vazio.',
+  'At least one provider stays on the notch':'Pelo menos um provedor deve permanecer no notch',
+  'Notch reads':'Leitura do notch', 'Model data':'Dados do modelo', 'Automatic':'Automático', '5-Hour Limit':'Limite de 5 horas', 'Weekly Limit':'Limite semanal',
+  'Gemini Models':'Modelos Gemini', 'Claude and GPT models':'Modelos Claude e GPT',
+  'Let Claude Code notify Codenotch':'Permitir que o Claude Code notifique o Codenotch',
+  'Turning this on adds a few lines to your Claude Code settings file so that Claude Code sends Codenotch a short message when a session starts, when it is working, when it is waiting for your answer, and when it finishes. That is what makes the ring spin and the amber ring pulse.':'Ativar esta opção adiciona algumas linhas ao arquivo de configurações do Claude Code para que ele envie notificações quando uma sessão iniciar, trabalhar, aguardar resposta ou terminar.',
+  'Notch':'Notch / HUD', 'Show':'Exibir', 'Always show':'Sempre exibir', 'Hide':'Ocultar',
+  'Size':'Tamanho', 'Small':'Pequeno', 'Medium':'Médio', 'Large':'Grande',
+  'Takes the least room on the edge. Readable, but not from across the desk.':'Ocupa o menor espaço na borda da tela.',
+  'The size the notch was drawn at.':'O tamanho padrão do notch.',
+  'Easier to read at a glance, and harder to ignore.':'Maior e mais fácil de ler de relance.',
+  'Weekly ring':'Anel semanal', 'Off':'Desativado', 'Inside':'Interno', 'Outside':'Externo',
+  'One ring per provider, showing the headline limit. The weekly allowance stays in the hover card.':'Um anel por provedor com o limite principal. A cota semanal fica no card de detalhes.',
+  'A thinner ring for the weekly limit, drawn inside the main one. It shares the gap with the working indicator.':'Um anel mais fino para o limite semanal, desenhado dentro do principal.',
+  'A thinner ring for the weekly limit, drawn around the main one, in the margin between the ring and the notch edge.':'Um anel mais fino para o limite semanal, desenhado ao redor do principal.',
+  'The notch stays open with every reading visible.':'O notch permanece aberto com todas as leituras visíveis.',
+  'The black pill against the right-hand edge of the screen, with one ring per tool. Turn it off and the pill disappears; Codenotch keeps counting your usage either way.':'A pílula na borda direita da tela, com um anel por ferramenta. Desative para ocultar; o Codenotch continua monitorando o uso normalmente.',
+  'Recentre':'Recentralizar',
+  'The pill can be dragged up and down the right-hand edge. If it has ended up somewhere you cannot see it — off the bottom of a screen you have unplugged, say — this drops it back into the middle of the edge.':'A pílula pode ser arrastada ao longo da borda direita. Este botão a reposiciona no centro da tela caso ela tenha saído da área visível.',
+  'The notch is back in the middle':'O notch foi reposicionado no centro da tela',
+  'App':'Aplicativo', 'App icon':'Ícone do aplicativo', 'System tray':'Bandeja do sistema', 'Neither':'Nenhum',
+  'Language':'Idioma', 'Follow system':'Seguir sistema', 'English':'Inglês',
+  'Sets the language used by Codenotch. “Follow system” uses the language Windows itself is set to.':'Define o idioma do Codenotch. "Seguir sistema" usa o idioma configurado no Windows.',
+  'Open Codenotch at login':'Iniciar Codenotch com o Windows',
+  'Codenotch opens by itself every time you sign in to this computer, and waits quietly in the background until a coding session starts. Turn it off and you have to open Codenotch yourself.':'O Codenotch inicia automaticamente ao ligar o computador e fica discretamente em segundo plano monitorando suas cotas de IA.',
+  'About':'Sobre', 'Version':'Versão', 'Data folder':'Pasta de dados', 'Open':'Abrir',
+  'Logs, persisted readings, and custom icon overrides.':'Logs, leituras salvas e configurações do HUD.',
+  'Saved':'Salvo com sucesso',
+  'No icon in the system tray. Open Codenotch again from the Start menu to bring these settings back.':'Nenhum ícone na bandeja do sistema. Abra o Codenotch pelo menu Iniciar para abrir estas configurações novamente.',
+  'App designed and developed by':'Aplicativo desenvolvido por'
+};
+const STATIC_TEXT = { pt: PT_STATIC, ru: RU_STATIC, zh: ZH_STATIC, ja: JA_STATIC, ko: KO_STATIC };
 const STATUS_TEXT = {
   en:{ ok:'', stale:'last reading is old', needsAuth:'not signed in', absent:'not installed', none:'nothing to report', error:'not reachable' },
+  pt:{ ok:'', stale:'dados desatualizados', needsAuth:'não conectado', absent:'não instalado', none:'sem dados', error:'inacessível' },
   ru:{ ok:'', stale:'данные устарели', needsAuth:'не выполнен вход', absent:'не установлен', none:'нет данных', error:'недоступен' },
   zh:{ ok:'', stale:'上次读数已过期', needsAuth:'未登录', absent:'未安装', none:'暂无报告', error:'无法连接' },
   ja:{ ok:'', stale:'最後の読み取りが古いです', needsAuth:'サインインしていません', absent:'インストールされていません', none:'報告するものがありません', error:'到達できません' },
@@ -589,8 +627,8 @@ document.getElementById('close').addEventListener('click', () => {
 });
 
 /* ---- providers ---------------------------------------------------------- */
-const ORDER = ['claude', 'codex', 'cursor', 'gemini'];
-const FALLBACK_LABEL = { claude:'Claude', codex:'Codex', cursor:'Cursor', gemini:'Antigravity' };
+const ORDER = ['claude', 'codex', 'cursor', 'gemini', 'deepseek', 'meta', 'opencode'];
+const FALLBACK_LABEL = { claude:'Claude', codex:'Codex', cursor:'Cursor', gemini:'Antigravity', deepseek:'DeepSeek', meta:'Meta Muse', opencode:'OpenCode Go' };
 let options = [];      // [{id,label,status,used}] from get_tray_options
 let glyphs = {};       // id -> {kind:'svg'|'png'|'appicon', svg, url}
 function providerList(){
@@ -876,30 +914,8 @@ document.getElementById('btn-recentre').addEventListener('click', () => {
     .catch(e => strip('reset_notch_position failed: ' + errText(e)));
 });
 
-  function refresh(){
-    return call(getCmd, undefined, null).then(v => {
-      if(typeof v === 'boolean') value = v;
-      setSwitch(id, value, busy);
-      return value;
-    });
-  }
-  if(el) el.addEventListener('click', () => {
-    if(busy || el.hasAttribute('disabled')) return;
-    const want = !value;
-    busy = true;
-    setSwitch(id, want, true);            // moves at once so the click is felt, but stays locked
-    invoke(setCmd, { on: want })
-      .catch(e => strip(label + ' could not be changed: ' + errText(e)))
-      .then(() => { busy = false; return refresh(); })
-      .then(() => { if(value === want) toast(ui('Saved', 'Saved')); });
-  });
-  return { refresh: refresh };
-}
-const autoSwitch = remoteSwitch('sw-autostart', 'get_autostart', 'set_autostart', 'Start with Windows');
-const hooksSwitch = remoteSwitch('sw-hooks', 'get_hooks_installed', 'set_hooks_installed', 'The Claude Code messages');
-
 /* ---- Appearance: language ------------------------------------------------ */
-const LANGS = ['auto', 'en', 'zh', 'ja', 'ko', 'ru', 'uk'];
+const LANGS = ['auto', 'pt', 'en', 'zh', 'ja', 'ko', 'ru', 'uk'];
 document.getElementById('lang').addEventListener('change', e => {
   const previous = e.target.dataset.previous || 'auto';
   const v = LANGS.indexOf(e.target.value) >= 0 ? e.target.value : 'auto';

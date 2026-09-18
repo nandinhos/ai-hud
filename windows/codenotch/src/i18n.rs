@@ -23,6 +23,9 @@ pub fn resolve_auto() -> &'static str {
             if name.starts_with("uk") {
                 return "uk";
             }
+            if name.starts_with("pt") {
+                return "pt";
+            }
         }
     }
     "en"
@@ -129,6 +132,22 @@ pub fn tr(lang: &str, key: &str) -> &'static str {
         ("uk", "autostart") => "Запускати разом із Windows (у фоні)",
         ("ru", "refresh") => "Обновить использование",
         ("uk", "refresh") => "Оновити використання",
+        ("pt", "settings") => "Configurações…",
+        ("pt", "refresh") => "Atualizar uso agora",
+        ("pt", "quit") => "Sair",
+        ("pt", "install") => "Instalar hooks do Claude Code",
+        ("pt", "uninstall") => "Desinstalar hooks",
+        ("pt", "language") => "Idioma",
+        ("pt", "lang_auto") => "Seguir sistema",
+        ("pt", "reset_pos") => "Redefinir posição do HUD",
+        ("pt", "hooks_missing") => "Hooks não instalados: clique com botão direito no ícone da bandeja → Instalar hooks do Claude Code",
+        ("pt", "autostart") => "Iniciar com o Windows (em segundo plano)",
+        ("pt", "open_data") => "Abrir pasta de dados (logs / ícones)",
+        ("pt", "tray_icon") => "Ícone da bandeja",
+        ("pt", "tray_off") => "Ícone simples",
+        ("pt", "tray_numbers") => "Números (até 2)",
+        ("pt", "tray_bars") => "Barras (mais de 2)",
+        ("pt", "tray_which") => "Quais provedores",
         (_, "install") => "Install Claude Code hooks",
         (_, "uninstall") => "Uninstall hooks",
         (_, "language") => "Language",
