@@ -151,7 +151,7 @@ pub fn resolve_api_key() -> Option<String> {
 fn fetch_with_url(endpoint: &str, token: &str) -> Result<RemainsResponse, String> {
     let resp = ureq::get(endpoint)
         .set("Authorization", &format!("Bearer {token}"))
-        .set("User-Agent", "Codenotch/1.12.0")
+        .set("User-Agent", concat!("Codenotch/", env!("CARGO_PKG_VERSION")))
         .set("Accept", "application/json")
         .timeout(Duration::from_secs(15))
         .call();
